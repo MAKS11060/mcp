@@ -21,7 +21,7 @@ const builtinPlugins: Record<string, McpPlugin> = {
     name: 'package-json',
     register: registerPackageJsonTools,
   },
-  'typescript': {
+  typescript: {
     name: 'typescript',
     register: registerTypescriptTools,
   },
