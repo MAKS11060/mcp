@@ -5,11 +5,59 @@
     "$schema": {
       "type": "string"
     },
-    "name": {
-      "type": "string"
-    },
-    "version": {
-      "type": "string"
+    "config": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "websiteUrl": {
+          "type": "string",
+          "format": "uri"
+        },
+        "icons": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "src": {
+                "type": "string",
+                "format": "uri"
+              },
+              "mimeType": {
+                "type": "string"
+              },
+              "sizes": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "theme": {
+                "type": "string",
+                "enum": [
+                  "light",
+                  "dark"
+                ]
+              }
+            },
+            "required": [
+              "src"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
     },
     "plugins": {
       "type": "array",

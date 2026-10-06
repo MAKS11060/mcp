@@ -4,10 +4,23 @@ import {pathToFileURL} from 'node:url'
 import {z} from 'zod'
 import {pathExists} from './utils/path.ts'
 
-export const McpConfigSchema = z.object({
-  $schema: z.string().optional(),
+const McpServerConfigSchema = z.object({
   name: z.string().optional(),
   version: z.string().optional(),
+  title: z.string().optional(),
+  description: z.string().optional(),
+  websiteUrl: z.string().url().optional(),
+  icons: z.array(z.object({
+    src: z.string().url(),
+    mimeType: z.string().optional(),
+    sizes: z.array(z.string()).optional(),
+    theme: z.enum(['light', 'dark']).optional(),
+  })).optional(),
+})
+
+export const McpConfigSchema = z.object({
+  $schema: z.string().optional(),
+  config: McpServerConfigSchema.optional(),
   plugins: z.array(z.string()).optional(),
 })
 
@@ -18,6 +31,7 @@ export const mcpConfigJsonSchema = z.toJSONSchema(McpConfigSchema)
 export const DEFAULT_CONFIG = '.mcp.json'
 
 export const DEFAULT_MCP_CONFIG: McpConfig = {
+  config: {},
   plugins: ['fs', 'git', 'run-script', 'code-quality'],
 }
 

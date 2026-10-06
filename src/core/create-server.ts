@@ -9,9 +9,12 @@ export async function createMcpServer(
   config: McpConfig = {},
   context = {cwd: Deno.cwd(), configPath: '.mcp.json'},
 ) {
+  const serverConfig = config.config ?? {}
+
   const server = new McpServer({
-    name: config.name ?? name,
-    version: config.version ?? version,
+    name: serverConfig.name ?? name,
+    version: serverConfig.version ?? version,
+    ...serverConfig,
   })
 
   await loadPlugins(server, config, context)

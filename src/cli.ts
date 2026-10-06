@@ -31,7 +31,7 @@ if (command === 'init' || values.init) {
   }
 
   await mkdir(dirname(configPath), {recursive: true})
-  await writeFile(configPath, JSON.stringify(DEFAULT_MCP_CONFIG, null, 2) + '\\n')
+  await writeFile(configPath, JSON.stringify(DEFAULT_MCP_CONFIG, null, 2) + '\n')
   console.log(`Создана конфигурация: ${configPath}`)
   Deno.exit(0)
 }
