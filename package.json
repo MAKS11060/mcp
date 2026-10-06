@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "bin": {
-    "mcp": "./mcp/main.ts"
+    "mcp": "./src/main.ts"
   },
   "scripts": {
     "dev": "deno run -A --env-file --watch-hmr --unstable-net mcp/main.ts",
