@@ -1,13 +1,19 @@
 import {readFile} from 'node:fs/promises'
 import {dirname, isAbsolute, resolve} from 'node:path'
 import {pathToFileURL} from 'node:url'
+import {z} from 'zod'
 import {pathExists} from './utils/path.ts'
 
-export interface McpConfig {
-  name?: string
-  version?: string
-  plugins?: string[]
-}
+export const McpConfigSchema = z.object({
+  $schema: z.string().optional(),
+  name: z.string().optional(),
+  version: z.string().optional(),
+  plugins: z.array(z.string()).optional(),
+})
+
+export type McpConfig = z.infer<typeof McpConfigSchema>
+
+export const mcpConfigJsonSchema = z.toJSONSchema(McpConfigSchema)
 
 const DEFAULT_CONFIG = '.mcp.json'
 
@@ -23,7 +29,7 @@ export async function loadConfig(cwd: string, configFile = DEFAULT_CONFIG) {
     }
   }
 
-  const config = JSON.parse(await readFile(configPath, 'utf8')) as McpConfig
+  const config = McpConfigSchema.parse(JSON.parse(await readFile(configPath, 'utf8')))
 
   return {
     config,

@@ -14,7 +14,8 @@
     "build": "deno compile --node-modules-dir=auto --no-check --allow-all --output dist/mcp mcp/main.ts",
     "build:win": "deno compile --node-modules-dir=auto --no-check --allow-all --target x86_64-pc-windows-msvc --output dist/mcp.exe mcp/main.ts",
     "build:linux": "deno compile --node-modules-dir=auto --no-check --allow-all --target x86_64-unknown-linux-gnu --output dist/mcp mcp/main.ts",
-    "build:macos": "deno compile --node-modules-dir=auto --no-check --allow-all --target aarch64-apple-darwin --output dist/mcp mcp/main.ts"
+    "build:macos": "deno compile --node-modules-dir=auto --no-check --allow-all --target aarch64-apple-darwin --output dist/mcp mcp/main.ts",
+    "schema": "deno run --allow-read --allow-write scripts/generate-schema.ts"
   },
   "dependencies": {
     "@hono/mcp": "^0.3.2",
@@ -24,7 +25,6 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
-    "@types/bun": "^1.4.2",
     "@types/deno": "^2.7.0",
     "@types/node": "^26.6.4",
     "typescript": "^7.0.2"
