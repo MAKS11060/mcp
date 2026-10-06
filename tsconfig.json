@@ -13,8 +13,5 @@
     "skipLibCheck": true,
 
     "types": ["node", "deno"],
-    "customConditions": [
-      "node",
-    ],
   },
 }
