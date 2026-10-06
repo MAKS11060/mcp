@@ -9,7 +9,7 @@ const McpServerConfigSchema = z.object({
   version: z.string().optional(),
   title: z.string().optional(),
   description: z.string().optional(),
-  websiteUrl: z.string().url().optional(),
+  websiteUrl: z.url().optional(),
   icons: z.array(z.object({
     src: z.url(),
     mimeType: z.string().optional(),
