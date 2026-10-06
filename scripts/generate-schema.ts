@@ -1,5 +1,5 @@
 import {mkdir, writeFile} from 'node:fs/promises'
-import {mcpConfigJsonSchema} from '../mcp/config.ts'
+import {mcpConfigJsonSchema} from '../src/config.ts'
 
 await mkdir('schema', {recursive: true})
 await writeFile(

@@ -15,7 +15,11 @@ export type McpConfig = z.infer<typeof McpConfigSchema>
 
 export const mcpConfigJsonSchema = z.toJSONSchema(McpConfigSchema)
 
-const DEFAULT_CONFIG = '.mcp.json'
+export const DEFAULT_CONFIG = '.mcp.json'
+
+export const DEFAULT_MCP_CONFIG: McpConfig = {
+  plugins: ['fs', 'git', 'run-script', 'code-quality'],
+}
 
 export async function loadConfig(cwd: string, configFile = DEFAULT_CONFIG) {
   const configPath = isAbsolute(configFile)

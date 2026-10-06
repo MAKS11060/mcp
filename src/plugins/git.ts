@@ -177,6 +177,40 @@ export function registerGitTools(server: McpServer) {
     },
   )
 
+  // --- mv ---
+  server.registerTool(
+    'git_mv',
+    {
+      description: 'Перемещает или переименовывает файл/директорию через git mv',
+      annotations: {readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false},
+      inputSchema: z.object({
+        source: z.string().min(1).describe('Исходный путь'),
+        destination: z.string().min(1).describe('Новый путь'),
+      }),
+    },
+    async ({source, destination}) => {
+      safeResolve(source)
+      safeResolve(destination)
+      await logAction('git', 'mv', {source, destination})
+
+      const result = await runCommand('git', [
+        'mv',
+        '--',
+        source.replace(/\\/g, '/'),
+        destination.replace(/\\/g, '/'),
+      ])
+
+      return {
+        content: [{
+          type: 'text',
+          text: result.ok
+            ? `Перемещено: ${source} -> ${destination}`
+            : `git mv failed:\\n${result.stderr || result.stdout}`,
+        }],
+      }
+    },
+  )
+
   // --- commit ---
   server.registerTool(
     'git_commit',
