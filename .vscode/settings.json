@@ -1,0 +1,27 @@
+{
+  "editor.defaultFormatter": "dprint.dprint",
+
+  "explorer.fileNesting.enabled": true,
+  "explorer.fileNesting.patterns": {
+    "package.json": ".*, *.json, *.ts, *.jsonc, *.yaml",
+    "*.mjs": "${capture}.d.mts, ${capture}.mjs.map",
+  },
+
+  // "nodejs-testing.env": { "FORCE_COLOR": "0" },
+  "nodejs-testing.extensions": [{
+    "filePatterns": ["**/*{js,ts}"],
+    "parameters": ["--env-file-if-exists=.env", "--import", "tsx"],
+    "extensions": ["ts"],
+  }],
+
+  "js/ts.referencesCodeLens.enabled": true,
+  "js/ts.preferences.autoImportSpecifierExcludeRegexes": [
+    "console",
+    "node:console",
+    "node:inspector",
+    "zod/.*",
+    "zod/v3*",
+    "zod/v4*",
+    // "^node:"
+  ],
+}
