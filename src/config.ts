@@ -33,7 +33,7 @@ export const DEFAULT_CONFIG = '.mcp.json'
 export const DEFAULT_MCP_CONFIG: McpConfig = {
   $schema: 'https://raw.githubusercontent.com/MAKS11060/mcp/main/schema/mcp.schema.json',
   config: {},
-  plugins: ['fs', 'git', 'run-script', 'code-quality'],
+  plugins: ['fs', 'git', 'package-json', 'typescript', 'dprint'],
 }
 
 export async function loadConfig(cwd: string, configFile = DEFAULT_CONFIG) {

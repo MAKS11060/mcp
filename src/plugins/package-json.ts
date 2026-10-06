@@ -17,7 +17,7 @@ async function listScripts(): Promise<string[]> {
   }
 }
 
-export function registerRunScriptTools(server: McpServer) {
+export function registerPackageJsonTools(server: McpServer) {
   server.registerTool(
     'run_script',
     {

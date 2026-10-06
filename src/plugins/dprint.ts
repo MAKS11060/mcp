@@ -13,35 +13,8 @@ async function runToolBin(bin: string, args: string[], timeout?: number) {
   return runCommand(bin, args, {timeout})
 }
 
-export async function registerCodeQualityTools(server: McpServer) {
-  const bins = await getAvailableBins(['tsc', 'dprint'])
-
-  // --- typecheck ---
-  if (hasBin(bins, 'tsc')) {
-    server.registerTool(
-      'typecheck',
-      {
-        description: 'tsc --noEmit (через package manager или PATH)',
-        annotations: {readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false},
-        inputSchema: z.object({}),
-      },
-      async () => {
-        await logAction('code', 'typecheck')
-        const result = await runToolBin('tsc', ['--noEmit'], 120_000)
-
-        if (result.ok) {
-          return {content: [{type: 'text', text: '✓ Ошибок типов нет'}]}
-        }
-
-        return {
-          content: [{
-            type: 'text',
-            text: `Ошибки TypeScript:\n\n${result.stderr || result.stdout}`,
-          }],
-        }
-      },
-    )
-  }
+export async function registerDprintTools(server: McpServer) {
+  const bins = await getAvailableBins(['dprint'])
 
   // --- dprint_check ---
   if (hasBin(bins, 'dprint')) {

@@ -2,10 +2,11 @@ import type {McpServer} from '@modelcontextprotocol/sdk/server/mcp.js'
 import {resolvePluginPath} from './config.ts'
 import type {McpConfig} from './config.ts'
 import type {McpPlugin, McpPluginContext} from './plugin.ts'
-import {registerCodeQualityTools} from './plugins/code-quality.ts'
+import {registerDprintTools} from './plugins/dprint.ts'
 import {registerFsTools} from './plugins/fs.ts'
 import {registerGitTools} from './plugins/git.ts'
-import {registerRunScriptTools} from './plugins/run-script.ts'
+import {registerPackageJsonTools} from './plugins/package-json.ts'
+import {registerTypescriptTools} from './plugins/typescript.ts'
 
 const builtinPlugins: Record<string, McpPlugin> = {
   fs: {
@@ -16,13 +17,17 @@ const builtinPlugins: Record<string, McpPlugin> = {
     name: 'git',
     register: registerGitTools,
   },
-  'run-script': {
-    name: 'run-script',
-    register: registerRunScriptTools,
+  'package-json': {
+    name: 'package-json',
+    register: registerPackageJsonTools,
   },
-  'code-quality': {
-    name: 'code-quality',
-    register: registerCodeQualityTools,
+  'typescript': {
+    name: 'typescript',
+    register: registerTypescriptTools,
+  },
+  dprint: {
+    name: 'dprint',
+    register: registerDprintTools,
   },
 }
 
@@ -31,7 +36,7 @@ export async function loadPlugins(
   config: McpConfig,
   context: McpPluginContext,
 ) {
-  const plugins = config.plugins ?? ['fs', 'git', 'run-script', 'code-quality']
+  const plugins = config.plugins ?? ['fs', 'git', 'package-json', 'typescript', 'dprint']
 
   for (const plugin of plugins) {
     const builtin = builtinPlugins[plugin]
