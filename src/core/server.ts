@@ -38,5 +38,5 @@ export async function startServer(configFile?: string) {
   const host = Deno.env.get('MCP_HOST') ?? 'localhost'
 
   console.log(`${scheme}://${host}:${PORT}`)
-  console.log(`${scheme}://${host}:${PORT}${MCP_PATH}?t=${Date.now()}  ${name}`)
+  console.log(`${scheme}://${host}:${PORT}${MCP_PATH}?t=${Math.floor(Date.now() / 1000)}  ${name}`)
 }

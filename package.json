@@ -13,6 +13,7 @@
     "fmt": "dprint fmt",
     "lint": "dprint check",
     "build": "deno compile --node-modules-dir=auto --no-check --allow-all --output dist/mcp src/cli.ts",
+    "build2": "deno compile --no-check --allow-all --bundle --minify --output dist/mcp src/cli.ts",
     "build:win": "deno compile --node-modules-dir=auto --no-check --allow-all --target x86_64-pc-windows-msvc --output dist/mcp.exe src/cli.ts",
     "build:linux": "deno compile --node-modules-dir=auto --no-check --allow-all --target x86_64-unknown-linux-gnu --output dist/mcp src/cli.ts",
     "build:macos": "deno compile --node-modules-dir=auto --no-check --allow-all --target aarch64-apple-darwin --output dist/mcp src/cli.ts",
