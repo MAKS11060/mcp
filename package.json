@@ -4,17 +4,18 @@
   "private": true,
   "type": "module",
   "bin": {
-    "mcp": "./src/main.ts"
+    "mcp": "./src/cli.ts"
   },
   "scripts": {
-    "dev": "deno run -A --env-file --watch-hmr --unstable-net src/main.ts",
+    "dev": "deno run -A --env-file --watch-hmr src/cli.ts",
+    "start": "deno run -A --env-file src/cli.ts",
     "tc": "tsc --noEmit",
     "fmt": "dprint fmt",
     "lint": "dprint check",
-    "build": "deno compile --node-modules-dir=auto --no-check --allow-all --output dist/mcp src/main.ts",
-    "build:win": "deno compile --node-modules-dir=auto --no-check --allow-all --target x86_64-pc-windows-msvc --output dist/mcp.exe src/main.ts",
-    "build:linux": "deno compile --node-modules-dir=auto --no-check --allow-all --target x86_64-unknown-linux-gnu --output dist/mcp src/main.ts",
-    "build:macos": "deno compile --node-modules-dir=auto --no-check --allow-all --target aarch64-apple-darwin --output dist/mcp src/main.ts",
+    "build": "deno compile --node-modules-dir=auto --no-check --allow-all --output dist/mcp src/cli.ts",
+    "build:win": "deno compile --node-modules-dir=auto --no-check --allow-all --target x86_64-pc-windows-msvc --output dist/mcp.exe src/cli.ts",
+    "build:linux": "deno compile --node-modules-dir=auto --no-check --allow-all --target x86_64-unknown-linux-gnu --output dist/mcp src/cli.ts",
+    "build:macos": "deno compile --node-modules-dir=auto --no-check --allow-all --target aarch64-apple-darwin --output dist/mcp src/cli.ts",
     "schema": "deno run --allow-read --allow-write scripts/generate-schema.ts"
   },
   "dependencies": {

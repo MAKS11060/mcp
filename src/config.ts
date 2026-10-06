@@ -11,7 +11,7 @@ const McpServerConfigSchema = z.object({
   description: z.string().optional(),
   websiteUrl: z.string().url().optional(),
   icons: z.array(z.object({
-    src: z.string().url(),
+    src: z.url(),
     mimeType: z.string().optional(),
     sizes: z.array(z.string()).optional(),
     theme: z.enum(['light', 'dark']).optional(),
