@@ -211,6 +211,83 @@ export function registerGitTools(server: McpServer) {
     },
   )
 
+  // --- fetch ---
+  server.registerTool(
+    'git_fetch',
+    {
+      description: 'Получает изменения с удалённого репозитория (git fetch)',
+      annotations: {readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: true},
+      inputSchema: z.object({
+        remote: z.string().default('origin').describe('Удалённый репозиторий'),
+        prune: z.boolean().default(false).describe('Удалить ссылки на удалённые ветки, которых больше нет'),
+      }),
+    },
+    async ({remote, prune}) => {
+      await logAction('git', 'fetch', {remote, prune})
+      const result = await runCommand('git', ['fetch', ...(prune ? ['--prune'] : []), remote])
+      return {
+        content: [{
+          type: 'text',
+          text: result.ok ? result.stdout || 'git fetch выполнен успешно' : result.stderr || result.stdout,
+        }],
+      }
+    },
+  )
+
+  // --- pull ---
+  server.registerTool(
+    'git_pull',
+    {
+      description: 'Получает и интегрирует изменения из удалённого репозитория (git pull)',
+      annotations: {readOnlyHint: false, destructiveHint: true, idempotentHint: false, openWorldHint: true},
+      inputSchema: z.object({
+        remote: z.string().default('origin').describe('Удалённый репозиторий'),
+        branch: z.string().optional().describe('Ветка. Если не указана, используется upstream текущей ветки'),
+        strategy: z.enum(['merge', 'rebase', 'ff-only']).default('merge').describe('Способ интеграции изменений'),
+      }),
+    },
+    async ({remote, branch, strategy}) => {
+      await logAction('git', 'pull', {remote, branch, strategy})
+      const strategyArg = strategy === 'rebase' ? '--rebase' : strategy === 'ff-only' ? '--ff-only' : '--no-rebase'
+      const result = await runCommand('git', ['pull', strategyArg, remote, ...(branch ? [branch] : [])])
+      return {
+        content: [{
+          type: 'text',
+          text: result.ok ? result.stdout || 'git pull выполнен успешно' : result.stderr || result.stdout,
+        }],
+      }
+    },
+  )
+
+  // --- push ---
+  server.registerTool(
+    'git_push',
+    {
+      description: 'Отправляет локальные коммиты в удалённый репозиторий (git push)',
+      annotations: {readOnlyHint: false, destructiveHint: true, idempotentHint: false, openWorldHint: true},
+      inputSchema: z.object({
+        remote: z.string().default('origin').describe('Удалённый репозиторий'),
+        branch: z.string().optional().describe('Ветка. Если не указана, используется upstream текущей ветки'),
+        setUpstream: z.boolean().default(false).describe('Установить upstream для ветки (-u)'),
+      }),
+    },
+    async ({remote, branch, setUpstream}) => {
+      await logAction('git', 'push', {remote, branch, setUpstream})
+      const result = await runCommand('git', [
+        'push',
+        ...(setUpstream ? ['--set-upstream'] : []),
+        remote,
+        ...(branch ? [branch] : []),
+      ])
+      return {
+        content: [{
+          type: 'text',
+          text: result.ok ? result.stdout || 'git push выполнен успешно' : result.stderr || result.stdout,
+        }],
+      }
+    },
+  )
+
   // --- commit ---
   server.registerTool(
     'git_commit',
