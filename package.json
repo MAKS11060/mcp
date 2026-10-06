@@ -1,20 +1,23 @@
 {
-  "name": "playground-node",
-  "version": "0.0.0",
+  "name": "mcp",
+  "version": "0.1.0",
   "private": true,
   "type": "module",
+  "bin": {
+    "mcp": "./mcp/main.ts"
+  },
   "scripts": {
+    "dev": "deno run -A --env-file --watch-hmr --unstable-net mcp/main.ts",
     "tc": "tsc --noEmit",
     "fmt": "dprint fmt",
     "lint": "dprint check",
-    "dev:node": "node --env-file .env --watch src/main.ts",
-    "dev:deno": "deno run -A --env-file .env --watch-hmr src/main.ts",
-    "typecheck:mcp-proxy": "tsc -p mcp-proxy/tsconfig.json"
+    "build": "deno compile --node-modules-dir=auto --no-check --allow-all --output dist/mcp mcp/main.ts",
+    "build:win": "deno compile --node-modules-dir=auto --no-check --allow-all --target x86_64-pc-windows-msvc --output dist/mcp.exe mcp/main.ts",
+    "build:linux": "deno compile --node-modules-dir=auto --no-check --allow-all --target x86_64-unknown-linux-gnu --output dist/mcp mcp/main.ts",
+    "build:macos": "deno compile --node-modules-dir=auto --no-check --allow-all --target aarch64-apple-darwin --output dist/mcp mcp/main.ts"
   },
   "dependencies": {
     "@hono/mcp": "^0.3.2",
-    "@maks11060/serve": "link:..\\serve",
-    "@maks11060/ts-net": "link:../ts-net",
     "@modelcontextprotocol/sdk": "^1.32.0",
     "execa": "^10.0.1",
     "hono": "^4.13.13",
@@ -26,6 +29,5 @@
     "@types/node": "^26.6.4",
     "typescript": "^7.0.2"
   },
-  "packageManager": "pnpm@12.9.1",
-  "publishConfig": {}
+  "packageManager": "pnpm@12.9.1"
 }

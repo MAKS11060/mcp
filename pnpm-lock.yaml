@@ -169,12 +169,6 @@ importers:
       '@hono/mcp':
         specifier: ^0.3.2
         version: 0.3.2(@modelcontextprotocol/sdk@1.32.0(zod@4.6.5))(hono-rate-limiter@0.5.4(hono@4.13.13))(hono@4.13.13)(zod@4.6.5)
-      '@maks11060/serve':
-        specifier: link:..\serve
-        version: link:../serve
-      '@maks11060/ts-net':
-        specifier: link:../ts-net
-        version: link:../ts-net
       '@modelcontextprotocol/sdk':
         specifier: ^1.32.0
         version: 1.32.0(zod@4.6.5)
