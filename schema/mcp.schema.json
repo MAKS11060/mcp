@@ -5,6 +5,29 @@
     "$schema": {
       "type": "string"
     },
+    "server": {
+      "type": "object",
+      "properties": {
+        "mcp_path": {
+          "type": "string"
+        },
+        "host": {
+          "type": "string"
+        },
+        "port": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535
+        },
+        "cert": {
+          "type": "string"
+        },
+        "key": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
     "config": {
       "type": "object",
       "properties": {
