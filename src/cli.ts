@@ -1,6 +1,5 @@
 #!/usr/bin/env -S deno run -A
 
-import {randomBytes} from 'node:crypto'
 import {mkdir, writeFile} from 'node:fs/promises'
 import {dirname} from 'node:path'
 import {parseArgs} from 'node:util'
@@ -31,7 +30,7 @@ if (command === 'init' || values.init) {
     if (!(error instanceof Deno.errors.NotFound)) throw error
   }
 
-  const mcpPath = `/mcp/${randomBytes(5).toHex()}`
+  const mcpPath = `/mcp/${crypto.getRandomValues(new Uint8Array(5)).toHex()}`
   const port = 443
   const name = cwd.split(/[\\/]/).filter(Boolean).at(-1) ?? 'mcp'
 
