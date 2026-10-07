@@ -1,6 +1,7 @@
 import {appendFile} from 'node:fs/promises'
 
-const LOG_FILE = process.env.MCP_LOG_FILE
+let enabled = true
+let logFile: string | undefined = process.env.MCP_LOG_FILE
 
 const colors = {
   reset: '\x1b[0m',
@@ -18,22 +19,29 @@ const categoryColors = {
   system: colors.gray,
 } as const
 
+export function configureLogger(options: {enabled?: boolean; file?: string}) {
+  enabled = options.enabled ?? true
+  logFile = options.file
+}
+
 export async function logAction(
   category: keyof typeof categoryColors,
   action: string,
   details?: Record<string, unknown>,
 ) {
+  if (!enabled) return
+
   const suffix = details ? ` ${JSON.stringify(details)}` : ''
   const line = `[${category}] ${action}${suffix}`
   const color = categoryColors[category]
 
-  console.log(`${color}${line}${colors.reset}`)
-
-  if (LOG_FILE) {
+  if (logFile) {
     try {
-      await appendFile(LOG_FILE, `${line}\\n`, 'utf-8')
+      await appendFile(logFile, `${line}\n`, 'utf-8')
     } catch (error) {
       console.error(`${colors.red}Failed to write MCP log:${colors.reset}`, error)
     }
+  } else {
+    console.log(`${color}${line}${colors.reset}`)
   }
 }

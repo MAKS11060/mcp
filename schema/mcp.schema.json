@@ -8,9 +8,6 @@
     "server": {
       "type": "object",
       "properties": {
-        "mcp_path": {
-          "type": "string"
-        },
         "host": {
           "type": "string"
         },
@@ -23,6 +20,32 @@
           "type": "string"
         },
         "key": {
+          "type": "string"
+        },
+        "log": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "mcp": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "log": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "string",
+              "const": "file"
+            }
+          ]
+        },
+        "log_path": {
           "type": "string"
         }
       },

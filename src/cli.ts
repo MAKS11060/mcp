@@ -1,9 +1,10 @@
 #!/usr/bin/env -S deno run -A
 
+import {randomBytes} from 'node:crypto'
 import {mkdir, writeFile} from 'node:fs/promises'
 import {dirname} from 'node:path'
 import {parseArgs} from 'node:util'
-import {DEFAULT_CONFIG, DEFAULT_MCP_CONFIG, loadConfig} from './config.ts'
+import {DEFAULT_CONFIG, DEFAULT_MCP_CONFIG, loadConfig, type McpConfig} from './config.ts'
 import {startServer} from './core/server.ts'
 
 const {values, positionals} = parseArgs({
@@ -30,8 +31,29 @@ if (command === 'init' || values.init) {
     if (!(error instanceof Deno.errors.NotFound)) throw error
   }
 
+  const mcpPath = `/mcp/${randomBytes(5).toHex()}`
+  const port = 443
+  const name = cwd.split(/[\\/]/).filter(Boolean).at(-1) ?? 'mcp'
+
+  const config = {
+    ...DEFAULT_MCP_CONFIG,
+    mcp: {
+      ...DEFAULT_MCP_CONFIG.mcp,
+      path: mcpPath,
+    },
+    server: {
+      ...DEFAULT_MCP_CONFIG.server,
+      port,
+    },
+    config: {
+      ...DEFAULT_MCP_CONFIG.config,
+      name,
+      title: name,
+    },
+  } satisfies McpConfig
+
   await mkdir(dirname(configPath), {recursive: true})
-  await writeFile(configPath, JSON.stringify(DEFAULT_MCP_CONFIG, null, 2) + '\n')
+  await writeFile(configPath, JSON.stringify(config, null, 2) + '\n')
   console.log(`Создана конфигурация: ${configPath}`)
   Deno.exit(0)
 }

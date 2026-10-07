@@ -8,8 +8,9 @@ Built-in plugins:
 
 - **fs** — read, write, patch, delete, search, and inspect project files
 - **git** — status, diff, show, log, init, add, move, commit, fetch, pull, and push
-- **run-script** — run scripts from `package.json`
-- **code-quality** — TypeScript checks and dprint formatting
+- **package-json** — run and list scripts from `package.json`
+- **typescript** — TypeScript type checking
+- **dprint** — formatting checks and formatting
 
 ## Installation
 
@@ -42,25 +43,53 @@ Or choose a path:
 mcp init --config .mcp.json
 ```
 
+The generated configuration contains a random MCP endpoint path and the project directory name as the server name and title.
+
 The configuration can reference the JSON Schema for editor autocomplete and validation:
 
 ```json
 {
   "$schema": "https://raw.githubusercontent.com/MAKS11060/mcp/main/schema/mcp.schema.json",
+  "server": {
+    "host": "localhost",
+    "port": 443,
+    "log": true
+  },
+  "mcp": {
+    "path": "/mcp/example",
+    "log": true,
+    "log_path": "./.mcp/mcp.log"
+  },
   "config": {
-    "name": "my-mcp",
+    "name": "my-project",
+    "title": "My Project",
     "version": "1.0.0"
   },
   "plugins": [
     "fs",
     "git",
-    "run-script",
-    "code-quality"
+    "package-json",
+    "typescript",
+    "dprint"
   ]
 }
 ```
 
-The `config` object contains the MCP server metadata. `plugins` controls which plugins are loaded.
+### Server logging
+
+`server.log` controls HTTP request logging and defaults to `true`.
+
+### MCP and plugin logging
+
+`mcp.log` controls logging of MCP tool/plugin actions:
+
+- `true` — log actions to the console
+- `false` — disable action logging
+- `"file"` — write action logs to a file
+
+When `mcp.log` is `"file"`, `mcp.log_path` specifies the log file. It defaults to `.mcp/mcp.log` relative to the configuration file.
+
+The `config` object contains MCP server metadata. `name` is the technical server name and `title` is its human-readable title. `plugins` controls which plugins are loaded.
 
 ## Development
 
@@ -81,7 +110,7 @@ Plugins can be referenced by local path or module specifier:
 {
   "plugins": [
     "fs",
-    "./mcp/my-plugin.ts"
+    "./my-plugin.ts"
   ]
 }
 ```
