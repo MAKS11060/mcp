@@ -1,11 +1,11 @@
 import {StreamableHTTPTransport} from '@hono/mcp'
 import {Hono} from 'hono'
-import {logger} from 'hono/logger'
 import {mkdir} from 'node:fs/promises'
 import {dirname, resolve} from 'node:path'
 import {loadConfig} from '../config.ts'
 import {configureLogger} from '../utils/logger.ts'
 import {createMcpServer, name} from './create-server.ts'
+import {getProjectRoot} from '../utils/path.ts'
 
 export async function startServer(configFile?: string) {
   const cwd = Deno.cwd()
@@ -31,6 +31,18 @@ export async function startServer(configFile?: string) {
   })
 
   const app = new Hono()
+  if (serverConfig.log ?? true) {
+    app.use(async (c, next) => {
+      await next()
+      console.log(
+        `%c[http] %c${c.res.status} %c${c.req.method} %c${c.req.path}`,
+        'color: orange',
+        c.res.ok ? 'color: green' : 'color: red',
+        'color: lime',
+        'color: orange',
+      )
+    })
+  }
 
   app.all(mcpPath, async (c) => {
     const mcpServer = await createMcpServer(config, {cwd, configPath})
@@ -39,10 +51,6 @@ export async function startServer(configFile?: string) {
     await mcpServer.connect(transport)
     return transport.handleRequest(c)
   })
-
-  if (serverConfig.log ?? true) {
-    app.use(logger())
-  }
 
   const keyPath = serverConfig.key ?? Deno.env.get('KEY')
   const certPath = serverConfig.cert ?? Deno.env.get('CERT')
@@ -57,6 +65,8 @@ export async function startServer(configFile?: string) {
     const scheme = useTls ? 'https' : 'http'
     console.log(`${scheme}://${addr.hostname}:${addr.port}`)
     console.log(`${scheme}://${addr.hostname}:${addr.port}${mcpPath}?t=${Math.floor(Date.now() / 1000)} | ${name}`)
+
+    console.log(`Project root %c${getProjectRoot()}`, 'color: green')
   }
 
   if (useTls) {
