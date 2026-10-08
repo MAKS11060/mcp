@@ -9,6 +9,7 @@ export type BinAvailability = {
 }
 
 let cached: BinAvailability | null = null
+const checkedGlobal = new Set<string>()
 
 /**
  * Собирает имена бинарников из node_modules/.bin
@@ -53,19 +54,23 @@ async function isOnPath(bin: string): Promise<boolean> {
 }
 
 export async function getAvailableBins(checkGlobal: string[] = []): Promise<BinAvailability> {
-  if (cached) return cached
-
-  const local = await listLocalBins()
-  const global = new Set<string>()
-
-  for (const bin of checkGlobal) {
-    if (local.has(bin)) continue
-    if (await isOnPath(bin)) {
-      global.add(bin)
+  if (!cached) {
+    cached = {
+      local: await listLocalBins(),
+      global: new Set(),
     }
   }
 
-  cached = {local, global}
+  for (const bin of checkGlobal) {
+    if (checkedGlobal.has(bin) || cached.local.has(bin)) continue
+
+    checkedGlobal.add(bin)
+
+    if (await isOnPath(bin)) {
+      cached.global.add(bin)
+    }
+  }
+
   return cached
 }
 
