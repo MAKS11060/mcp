@@ -26,23 +26,31 @@ export async function registerDprintTools(server: McpServer) {
         inputSchema: z.object({
           files: z.array(z.string()).optional().describe('Specific files to check (optional)'),
           json: z.boolean().default(false).describe('Output results as JSON'),
+          maxOutput: z.number().int().min(1).max(2000).default(200).describe(
+            'Maximum number of output lines to return',
+          ),
         }),
       },
-      async ({files, json}) => {
-        await logAction('code', 'dprint_check', {files, json})
+      async ({files, json, maxOutput}) => {
+        await logAction('code', 'dprint_check', {files, json, maxOutput})
 
         const args = ['check']
         if (json) args.push('--json')
         if (files?.length) args.push(...files)
 
         const result = await runToolBin('dprint', args)
+        const output = result.stdout || result.stderr
+        const lines = output.split('\n')
+        const truncated = lines.length > maxOutput
 
         return {
           content: [{
             type: 'text',
             text: result.ok
               ? '✓ Форматирование в порядке'
-              : (result.stdout || result.stderr),
+              : `${lines.slice(0, maxOutput).join('\n')}${
+                truncated ? `\n\n... output truncated (${lines.length} lines total)` : ''
+              }`,
           }],
         }
       },

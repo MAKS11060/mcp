@@ -23,20 +23,30 @@ export async function registerTypescriptTools(server: McpServer) {
       {
         description: 'Run tsc --noEmit using the project package manager or a binary available on PATH',
         annotations: {readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false},
-        inputSchema: z.object({}),
+        inputSchema: z.object({
+          maxOutput: z.number().int().min(1).max(2000).default(200).describe(
+            'Maximum number of output lines to return',
+          ),
+        }),
       },
-      async () => {
-        await logAction('code', 'typecheck')
+      async ({maxOutput}) => {
+        await logAction('code', 'typecheck', {maxOutput})
         const result = await runToolBin('tsc', ['--noEmit'], 120_000)
 
         if (result.ok) {
           return {content: [{type: 'text', text: '✓ Ошибок типов нет'}]}
         }
 
+        const output = result.stderr || result.stdout
+        const lines = output.split('\n')
+        const truncated = lines.length > maxOutput
+
         return {
           content: [{
             type: 'text',
-            text: `Ошибки TypeScript:\n\n${result.stderr || result.stdout}`,
+            text: `Ошибки TypeScript:\n\n${lines.slice(0, maxOutput).join('\n')}${
+              truncated ? `\n\n... output truncated (${lines.length} lines total)` : ''
+            }`,
           }],
         }
       },

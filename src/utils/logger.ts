@@ -41,7 +41,7 @@ export async function logAction(
     } catch (error) {
       console.error(`${colors.red}Failed to write MCP log:${colors.reset}`, error)
     }
-  } else {
-    console.log(`${color}${line}${colors.reset}`)
   }
+
+  console.log(`${color}${line}${colors.reset}`)
 }
