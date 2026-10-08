@@ -5,7 +5,7 @@ import {dirname, resolve} from 'node:path'
 import {loadConfig} from '../config.ts'
 import {configureLogger} from '../utils/logger.ts'
 import {getProjectRoot} from '../utils/path.ts'
-import {createMcpServer, name} from './create-server.ts'
+import {createMcpServer} from './create-server.ts'
 
 export async function startServer(configFile?: string) {
   const cwd = Deno.cwd()
