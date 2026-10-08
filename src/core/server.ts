@@ -4,8 +4,8 @@ import {mkdir} from 'node:fs/promises'
 import {dirname, resolve} from 'node:path'
 import {loadConfig} from '../config.ts'
 import {configureLogger} from '../utils/logger.ts'
-import {createMcpServer, name} from './create-server.ts'
 import {getProjectRoot} from '../utils/path.ts'
+import {createMcpServer, name} from './create-server.ts'
 
 export async function startServer(configFile?: string) {
   const cwd = Deno.cwd()
@@ -64,7 +64,11 @@ export async function startServer(configFile?: string) {
   const onListen = (addr: Deno.NetAddr) => {
     const scheme = useTls ? 'https' : 'http'
     console.log(`${scheme}://${addr.hostname}:${addr.port}`)
-    console.log(`${scheme}://${addr.hostname}:${addr.port}${mcpPath}?t=${Math.floor(Date.now() / 1000)} | ${name}`)
+    console.log(
+      `${scheme}://${addr.hostname}:${addr.port}${mcpPath}?t=${Math.floor(Date.now() / 1000)} | ${
+        config.config?.name ?? 'mcp'
+      }`,
+    )
 
     console.log(`Project root %c${getProjectRoot()}`, 'color: green')
   }
