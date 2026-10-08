@@ -5,13 +5,19 @@ import {getProjectRoot} from './path.ts'
 export async function runCommand(
   command: string,
   args: string[] = [],
-  options: {cwd?: string; timeout?: number} = {},
+  options: {
+    cwd?: string
+    timeout?: number
+    env?: Record<string, string>
+
+  } = {},
 ) {
   const cwd = options.cwd ?? getProjectRoot()
 
   const result = await execa(command, args, {
     cwd,
     timeout: options.timeout ?? 90_000,
+    env: options.env ? {...process.env, ...options.env} : undefined,
     reject: false,
     all: true,
   })
@@ -32,8 +38,13 @@ export async function runCommand(
 export async function runBin(
   bin: string,
   binArgs: string[] = [],
-  options: {cwd?: string; timeout?: number} = {},
+  options: {
+    cwd?: string
+    timeout?: number
+    env?: Record<string, string>
+  } = {},
 ) {
   const {command, args} = await resolveBin(bin, binArgs)
   return runCommand(command, args, options)
 }
+

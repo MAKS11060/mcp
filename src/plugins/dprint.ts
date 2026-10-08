@@ -7,10 +7,10 @@ import {logAction} from '../utils/logger.ts'
 async function runToolBin(bin: string, args: string[], timeout?: number) {
   const bins = await getAvailableBins([bin])
   if (isLocalBin(bins, bin)) {
-    return runBin(bin, args, {timeout})
+    return runBin(bin, args, {timeout, env: {NO_COLOR: '1'}})
   }
   // глобальная команда
-  return runCommand(bin, args, {timeout})
+  return runCommand(bin, args, {timeout, env: {NO_COLOR: '1'}})
 }
 
 export async function registerDprintTools(server: McpServer) {

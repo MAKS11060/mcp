@@ -20,6 +20,7 @@
     "**/node_modules",
     "**/*-lock.json",
     "**/*-lock.yaml",
+    "!.mcp.json",
   ],
   "plugins": [
     "npm:@dprint/typescript@0.96.1",
