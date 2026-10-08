@@ -1,0 +1,33 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "mcp start",
+      "type": "shell",
+      "command": "pnpm start",
+      "problemMatcher": [],
+      "group": { "kind": "build" },
+      "icon": { "color": "terminal.ansiGreen", "id": "server" },
+    },
+    {
+      "label": "mcp dev",
+      "type": "shell",
+      "command": "pnpm dev",
+      "problemMatcher": [],
+      "group": { "kind": "build" },
+      "icon": { "color": "terminal.ansiBlue", "id": "server" },
+    },
+    {
+      "label": "mcp build2",
+      "type": "shell",
+      "command": "pnpm build2",
+      "problemMatcher": [],
+      "group": { "kind": "build" },
+      "icon": { "color": "terminal.ansiWhite", "id": "build" },
+      "presentation": {
+        "echo": true,
+        "clear": false,
+      },
+    },
+  ],
+}

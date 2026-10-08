@@ -1,4 +1,5 @@
 {
+  "task.autoDetect": "off",
   "editor.defaultFormatter": "dprint.dprint",
 
   "explorer.fileNesting.enabled": true,
