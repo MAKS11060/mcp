@@ -19,7 +19,7 @@ export function registerGitTools(server: McpServer) {
   server.registerTool(
     'git_status',
     {
-      description: 'Показывает git status --short и проверяет наличие репозитория',
+      description: 'Show git status --short and verify that a Git repository exists',
       annotations: {readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false},
       inputSchema: z.object({}),
     },
@@ -46,11 +46,11 @@ export function registerGitTools(server: McpServer) {
   server.registerTool(
     'git_diff',
     {
-      description: 'Показывает изменения в рабочем дереве или staged-изменения',
+      description: 'Show working tree changes or staged changes',
       annotations: {readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false},
       inputSchema: z.object({
-        staged: z.boolean().default(false).describe('Показывать staged-изменения'),
-        files: z.array(z.string()).optional().describe('Только указанные файлы'),
+        staged: z.boolean().default(false).describe('Show staged changes'),
+        files: z.array(z.string()).optional().describe('Only the specified files'),
       }),
     },
     async ({staged, files}) => {
@@ -74,11 +74,11 @@ export function registerGitTools(server: McpServer) {
   server.registerTool(
     'git_show',
     {
-      description: 'Показывает содержимое commit или его diff',
+      description: 'Show the contents of a commit or its diff',
       annotations: {readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false},
       inputSchema: z.object({
-        commit: z.string().default('HEAD').describe('Commit, например HEAD, HEAD~1 или hash'),
-        files: z.array(z.string()).optional().describe('Ограничить указанными файлами'),
+        commit: z.string().default('HEAD').describe('Commit reference, such as HEAD, HEAD~1, or a hash'),
+        files: z.array(z.string()).optional().describe('Limit output to the specified files'),
       }),
     },
     async ({commit, files}) => {
@@ -103,7 +103,7 @@ export function registerGitTools(server: McpServer) {
   server.registerTool(
     'git_init',
     {
-      description: 'Инициализирует git-репозиторий (git init), если его ещё нет',
+      description: 'Initialize a Git repository if one does not already exist',
       annotations: {readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false},
       inputSchema: z.object({}),
     },
@@ -126,11 +126,11 @@ export function registerGitTools(server: McpServer) {
   server.registerTool(
     'git_log',
     {
-      description: 'Показывает последние коммиты',
+      description: 'Show recent commits',
       annotations: {readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false},
       inputSchema: z.object({
-        limit: z.number().min(1).max(50).default(10).describe('Количество коммитов'),
-        file: z.string().optional().describe('Показывать историю только указанного файла'),
+        limit: z.number().min(1).max(50).default(10).describe('Number of commits'),
+        file: z.string().optional().describe('Show history for the specified file only'),
       }),
     },
     async ({limit, file}) => {
@@ -153,11 +153,11 @@ export function registerGitTools(server: McpServer) {
   server.registerTool(
     'git_add',
     {
-      description: 'Добавляет файлы в индекс (git add). Без files — git add .',
+      description: 'Stage files with git add. If files is omitted, stage all files',
       annotations: {readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false},
       inputSchema: z.object({
         files: z.array(z.string()).optional().describe(
-          'Список относительных путей. Если не указан — добавляет всё (.)',
+          'List of relative paths. If omitted, stage all files (.)',
         ),
       }),
     },
@@ -181,11 +181,11 @@ export function registerGitTools(server: McpServer) {
   server.registerTool(
     'git_mv',
     {
-      description: 'Перемещает или переименовывает файл/директорию через git mv',
+      description: 'Move or rename a file or directory using git mv',
       annotations: {readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false},
       inputSchema: z.object({
-        source: z.string().min(1).describe('Исходный путь'),
-        destination: z.string().min(1).describe('Новый путь'),
+        source: z.string().min(1).describe('Source path'),
+        destination: z.string().min(1).describe('Destination path'),
       }),
     },
     async ({source, destination}) => {
@@ -215,11 +215,11 @@ export function registerGitTools(server: McpServer) {
   server.registerTool(
     'git_fetch',
     {
-      description: 'Получает изменения с удалённого репозитория (git fetch)',
+      description: 'Fetch changes from a remote repository using git fetch',
       annotations: {readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: true},
       inputSchema: z.object({
         remote: z.string().default('origin').describe('Удалённый репозиторий'),
-        prune: z.boolean().default(false).describe('Удалить ссылки на удалённые ветки, которых больше нет'),
+        prune: z.boolean().default(false).describe('Prune references to deleted remote branches'),
       }),
     },
     async ({remote, prune}) => {
@@ -238,7 +238,7 @@ export function registerGitTools(server: McpServer) {
   server.registerTool(
     'git_pull',
     {
-      description: 'Получает и интегрирует изменения из удалённого репозитория (git pull)',
+      description: 'Fetch and integrate changes from a remote repository using git pull',
       annotations: {readOnlyHint: false, destructiveHint: true, idempotentHint: false, openWorldHint: true},
       inputSchema: z.object({
         remote: z.string().default('origin').describe('Удалённый репозиторий'),
@@ -263,12 +263,12 @@ export function registerGitTools(server: McpServer) {
   server.registerTool(
     'git_push',
     {
-      description: 'Отправляет локальные коммиты в удалённый репозиторий (git push)',
+      description: 'Push local commits to a remote repository using git push',
       annotations: {readOnlyHint: false, destructiveHint: true, idempotentHint: false, openWorldHint: true},
       inputSchema: z.object({
         remote: z.string().default('origin').describe('Удалённый репозиторий'),
         branch: z.string().optional().describe('Ветка. Если не указана, используется upstream текущей ветки'),
-        setUpstream: z.boolean().default(false).describe('Установить upstream для ветки (-u)'),
+        setUpstream: z.boolean().default(false).describe('Set the branch upstream (-u)'),
       }),
     },
     async ({remote, branch, setUpstream}) => {
@@ -293,12 +293,12 @@ export function registerGitTools(server: McpServer) {
     'git_commit',
     {
       description:
-        'Создаёт коммит. Если передан files — сначала git add этих файлов, иначе коммитит уже проиндексированное (без add .).',
+        'Create a commit. If files are provided, stage them first; otherwise commit only already staged changes',
       annotations: {readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false},
       inputSchema: z.object({
-        message: z.string().min(1).describe('Сообщение коммита'),
+        message: z.string().min(1).describe('Commit message'),
         files: z.array(z.string()).optional().describe(
-          'Файлы для git add перед коммитом. Если не указаны — только staged изменения',
+          'Files to stage before committing. If omitted, commit only staged changes',
         ),
       }),
     },

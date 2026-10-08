@@ -21,11 +21,11 @@ export async function registerDprintTools(server: McpServer) {
     server.registerTool(
       'dprint_check',
       {
-        description: 'dprint check (можно указать конкретные файлы)',
+        description: 'Check files for formatting issues using dprint',
         annotations: {readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false},
         inputSchema: z.object({
-          files: z.array(z.string()).optional().describe('Конкретные файлы (опционально)'),
-          json: z.boolean().default(false).describe('Вывод в JSON'),
+          files: z.array(z.string()).optional().describe('Specific files to check (optional)'),
+          json: z.boolean().default(false).describe('Output results as JSON'),
         }),
       },
       async ({files, json}) => {
@@ -52,10 +52,10 @@ export async function registerDprintTools(server: McpServer) {
     server.registerTool(
       'dprint_fmt',
       {
-        description: 'dprint fmt (можно указать конкретные файлы)',
+        description: 'Format files using dprint',
         annotations: {readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false},
         inputSchema: z.object({
-          files: z.array(z.string()).optional().describe('Конкретные файлы'),
+          files: z.array(z.string()).optional().describe('Specific files to format'),
         }),
       },
       async ({files}) => {

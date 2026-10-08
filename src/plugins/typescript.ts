@@ -21,7 +21,7 @@ export async function registerTypescriptTools(server: McpServer) {
     server.registerTool(
       'typecheck',
       {
-        description: 'tsc --noEmit (через package manager или PATH)',
+        description: 'Run tsc --noEmit using the project package manager or a binary available on PATH',
         annotations: {readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false},
         inputSchema: z.object({}),
       },

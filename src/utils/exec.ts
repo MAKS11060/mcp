@@ -9,7 +9,6 @@ export async function runCommand(
     cwd?: string
     timeout?: number
     env?: Record<string, string>
-
   } = {},
 ) {
   const cwd = options.cwd ?? getProjectRoot()
@@ -47,4 +46,3 @@ export async function runBin(
   const {command, args} = await resolveBin(bin, binArgs)
   return runCommand(command, args, options)
 }
-

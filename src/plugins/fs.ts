@@ -32,7 +32,7 @@ export function registerFsTools(server: McpServer) {
   server.registerTool(
     'fs_list_dir',
     {
-      description: 'Список файлов и папок',
+      description: 'List files and directories',
       annotations: {readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false},
       inputSchema: z.object({
         path: z.string().default('.').describe('Относительный путь'),
@@ -58,11 +58,11 @@ export function registerFsTools(server: McpServer) {
   server.registerTool(
     'fs_glob',
     {
-      description: 'Поиск файлов по glob-паттерну (например **/*.ts, src/**/*.tsx)',
+      description: 'Find files matching a glob pattern, such as **/*.ts or src/**/*.tsx',
       annotations: {readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false},
       inputSchema: z.object({
-        pattern: z.string().describe('Glob-паттерн'),
-        cwd: z.string().default('.').describe('Относительная директория поиска'),
+        pattern: z.string().describe('Glob pattern'),
+        cwd: z.string().default('.').describe('Search directory, relative to the project root'),
       }),
     },
     async ({pattern, cwd}) => {
@@ -91,14 +91,14 @@ export function registerFsTools(server: McpServer) {
   server.registerTool(
     'fs_find',
     {
-      description: 'Ищет текст или регулярное выражение в файлах и возвращает совпадения с номерами строк',
+      description: 'Search files for text or a regular expression and return matching lines with line numbers',
       annotations: {readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false},
       inputSchema: z.object({
-        pattern: z.string().describe('Текст или регулярное выражение'),
-        path: z.string().default('.').describe('Файл или директория поиска'),
-        include: z.string().default('**/*').describe('Glob-паттерн файлов внутри директории'),
-        regex: z.boolean().default(false).describe('Интерпретировать pattern как регулярное выражение'),
-        maxResults: z.number().int().min(1).max(1000).default(100).describe('Максимальное количество совпадений'),
+        pattern: z.string().describe('Text or regular expression to search for'),
+        path: z.string().default('.').describe('File or directory to search'),
+        include: z.string().default('**/*').describe('Glob pattern for files inside the directory'),
+        regex: z.boolean().default(false).describe('Interpret pattern as a regular expression'),
+        maxResults: z.number().int().min(1).max(1000).default(100).describe('Maximum number of matches'),
       }),
     },
     async ({pattern, path, include, regex, maxResults}) => {
@@ -157,13 +157,13 @@ export function registerFsTools(server: McpServer) {
   server.registerTool(
     'fs_read_file',
     {
-      description: 'Читает файл целиком или указанный диапазон строк',
+      description: 'Read a file completely or read a specified range of lines',
       annotations: {readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false},
       inputSchema: z.object({
         path: z.string(),
-        startLine: z.number().int().min(1).default(1).describe('Первая строка, начиная с 1'),
+        startLine: z.number().int().min(1).default(1).describe('First line number, starting at 1'),
         lineCount: z.number().int().min(1).max(10000).optional().describe(
-          'Количество строк. Без него читает файл целиком',
+          'Number of lines. If omitted, read the entire file',
         ),
       }),
     },
@@ -195,8 +195,7 @@ export function registerFsTools(server: McpServer) {
   server.registerTool(
     'fs_patch',
     {
-      description:
-        'Точечно изменяет файл, заменяя указанные фрагменты. Каждый old-фрагмент должен встретиться ровно один раз',
+      description: 'Apply targeted replacements to a file. Each old fragment must occur exactly once',
       annotations: {readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: false},
       inputSchema: z.object({
         path: z.string(),
@@ -239,7 +238,7 @@ export function registerFsTools(server: McpServer) {
   server.registerTool(
     'fs_write_file',
     {
-      description: 'Записывает файл (создаёт папки при необходимости)',
+      description: 'Write a file and create parent directories when needed',
       annotations: {readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: false},
       inputSchema: z.object({
         path: z.string(),
@@ -264,7 +263,7 @@ export function registerFsTools(server: McpServer) {
     'fs_delete_file',
     {
       description:
-        'Удаляет файл только если он существует в последнем коммите Git. Незакоммиченные и неотслеживаемые файлы удалить нельзя',
+        'Delete a file only if it exists in the latest Git commit. Uncommitted and untracked files cannot be deleted',
       annotations: {readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: false},
       inputSchema: z.object({
         path: z.string(),
@@ -312,7 +311,7 @@ export function registerFsTools(server: McpServer) {
   server.registerTool(
     'fs_stat',
     {
-      description: 'Информация о файле/папке',
+      description: 'Get information about a file or directory',
       annotations: {readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false},
       inputSchema: z.object({path: z.string()}),
     },

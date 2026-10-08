@@ -22,14 +22,14 @@ export function registerPackageJsonTools(server: McpServer) {
     'run_script',
     {
       description:
-        'Запускает npm-script из package.json через package manager (pnpm run / npm run / yarn / bun run). Только существующие scripts.',
+        'Run an npm script from package.json through the detected package manager. Only existing scripts can be run',
       annotations: {readOnlyHint: false, destructiveHint: true, idempotentHint: false, openWorldHint: true},
       inputSchema: z.object({
-        script: z.string().min(1).describe('Имя script из package.json'),
+        script: z.string().min(1).describe('Script name from package.json'),
         args: z
           .array(z.string())
           .optional()
-          .describe('Доп. аргументы после --'),
+          .describe('Additional arguments passed after --'),
       }),
     },
     async ({script, args}) => {
@@ -64,7 +64,7 @@ export function registerPackageJsonTools(server: McpServer) {
   server.registerTool(
     'list_scripts',
     {
-      description: 'Список scripts из package.json',
+      description: 'List scripts defined in package.json',
       annotations: {readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false},
       inputSchema: z.object({}),
     },
