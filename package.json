@@ -12,6 +12,7 @@
     "tc": "tsc --noEmit",
     "fmt": "dprint fmt",
     "lint": "dprint check",
+    "test": "deno test tests",
     "build": "deno compile --node-modules-dir=auto --no-check --allow-all --output dist/mcp src/cli.ts",
     "build2": "deno compile --no-check --allow-all --bundle --minify --output dist/mcp src/cli.ts",
     "build:win": "deno compile --node-modules-dir=auto --no-check --allow-all --target x86_64-pc-windows-msvc --output dist/mcp.exe src/cli.ts",

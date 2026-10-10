@@ -95,7 +95,7 @@ export function registerGitTools(server: McpServer) {
       }
       const paths = files?.length ? gitPaths(files) : []
       const result = mode === 'blob'
-        ? await runCommand('git', ['show', `${commit}:${path!.replace(/\\\\/g, '/')}`])
+        ? await runCommand('git', ['show', `${commit}:${path!.replace(/\\/g, '/')}`])
         : await runCommand('git', [
           'show',
           '--stat',
@@ -219,7 +219,7 @@ export function registerGitTools(server: McpServer) {
           type: 'text',
           text: result.ok
             ? `Staged: ${paths.join(', ')}`
-            : `git add failed:\\n${result.stderr || result.stdout}`,
+            : `git add failed:\n${result.stderr || result.stdout}`,
         }],
       }
     },
@@ -253,7 +253,7 @@ export function registerGitTools(server: McpServer) {
           type: 'text',
           text: result.ok
             ? `Moved: ${source} -> ${destination}`
-            : `git mv failed:\\n${result.stderr || result.stdout}`,
+            : `git mv failed:\n${result.stderr || result.stdout}`,
         }],
       }
     },
@@ -359,7 +359,7 @@ export function registerGitTools(server: McpServer) {
         const paths = gitPaths(files)
         const add = await runCommand('git', ['add', '--', ...paths])
         if (!add.ok) {
-          return {content: [{type: 'text', text: `git add failed:\\n${add.stderr || add.stdout}`}]}
+          return {content: [{type: 'text', text: `git add failed:\n${add.stderr || add.stdout}`}]}
         }
       }
 
@@ -374,8 +374,8 @@ export function registerGitTools(server: McpServer) {
         content: [{
           type: 'text',
           text: commit.ok
-            ? `Commit created:\\n${commit.stdout}`
-            : `Commit failed:\\n${commit.stderr || commit.stdout}`,
+            ? `Commit created:\n${commit.stdout}`
+            : `Commit failed:\n${commit.stderr || commit.stdout}`,
         }],
       }
     },

@@ -11,16 +11,17 @@ import {
 import {join} from 'node:path'
 import {z} from 'zod'
 import {runCommand} from '../utils/exec.ts'
+import {replaceLines} from '../utils/lines.ts'
 import {logAction} from '../utils/logger.ts'
 import {pathExists, safeResolve, toRelative} from '../utils/path.ts'
 
 function getLines(content: string, startLine: number, endLine?: number, lineCount?: number) {
-  const lines = content.split(/\\r?\\n/)
+  const lines = content.split(/\r\n|\n|\r/)
   const start = Math.max(0, startLine - 1)
   const end = Math.min(lines.length, endLine ?? (start + (lineCount ?? lines.length)))
 
   return {
-    text: lines.slice(start, Math.max(start, end)).join('\\n'),
+    text: lines.slice(start, Math.max(start, end)).join('\n'),
     startLine: start + 1,
     endLine: Math.max(start, end),
     totalLines: lines.length,
@@ -119,7 +120,7 @@ export function registerFsTools(server: McpServer) {
       if (respectGitignore) {
         try {
           const gitignore = await readFile(join(base, '.gitignore'), 'utf-8')
-          for (const line of gitignore.split(/\\r?\\n/)) {
+          for (const line of gitignore.split(/\r?\n/)) {
             const trimmed = line.trim()
             const rule = trimmed.startsWith('/') ? trimmed.slice(1).replace(/\/$/, '') : trimmed.replace(/\/$/, '')
             if (rule && !rule.startsWith('#') && !rule.startsWith('!') && !rule.includes('*')) ignored.add(rule)
@@ -132,7 +133,7 @@ export function registerFsTools(server: McpServer) {
       const files: string[] = []
       let truncated = false
       for await (const f of glob(pattern, {cwd: base})) {
-        const normalized = f.replace(/\\\\/g, '/')
+        const normalized = f.replace(/\\/g, '/')
         if (isIgnoredPath(normalized, [...ignored])) continue
         if (files.length >= maxResults) {
           truncated = true
@@ -146,8 +147,8 @@ export function registerFsTools(server: McpServer) {
       return {
         content: [{
           type: 'text',
-          text: `${relativePaths.length ? relativePaths.join('\\n') : 'No matches found'}${
-            truncated ? `\\n\\nResults truncated at ${maxResults} paths` : ''
+          text: `${relativePaths.length ? relativePaths.join('\n') : 'No matches found'}${
+            truncated ? `\n\nResults truncated at ${maxResults} paths` : ''
           }`,
         }],
       }
@@ -185,7 +186,7 @@ export function registerFsTools(server: McpServer) {
       if (targetStat.isDirectory()) {
         for await (const file of glob(include, {cwd: full})) {
           const candidate = join(full, file)
-          if (exclude.some((rule) => file === rule || file.startsWith(rule.replace(/\\*\\*$/, '')))) continue
+          if (exclude.some((rule) => file === rule || file.startsWith(rule.replace(/\*\*$/, '')))) continue
           if ((await stat(candidate)).isFile()) files.push(candidate)
         }
       }
@@ -205,7 +206,7 @@ export function registerFsTools(server: McpServer) {
           continue
         }
 
-        const lines = content.split(/\\r?\\n/)
+        const lines = content.split(/\r\n|\n|\r/)
         for (let i = 0; i < lines.length && results.length < maxResults; i++) {
           const candidate = caseInsensitive ? lines[i].toLowerCase() : lines[i]
           const matched = matcher ? matcher.test(lines[i]) : candidate.includes(searchPattern)
@@ -230,7 +231,7 @@ export function registerFsTools(server: McpServer) {
         content: [{
           type: 'text',
           text: results.length
-            ? results.join('\\n')
+            ? results.join('\n')
             : 'No matches found',
         }],
       }
@@ -264,8 +265,7 @@ export function registerFsTools(server: McpServer) {
 
       const fileStat = await stat(full)
       const content = await readFile(full, 'utf-8')
-      const byteLength = Buffer.byteLength(content, 'utf-8')
-      const totalLines = content.split(/\\r?\\n/).length
+      const totalLines = content.split(/\r\n|\n|\r/).length
 
       if (tail !== undefined && (endLine !== undefined || lineCount !== undefined || startLine !== 1)) {
         throw new Error('tail cannot be combined with startLine, endLine, or lineCount')
@@ -302,8 +302,8 @@ export function registerFsTools(server: McpServer) {
       return {
         content: [{
           type: 'text',
-          text: `${rangeLabel ? `${rangeLabel}\\n` : ''}${selected}${
-            truncated ? `\\n\\n[Output truncated at ${maxBytes} bytes; file size: ${fileStat.size} bytes]` : ''
+          text: `${rangeLabel ? `${rangeLabel}\n` : ''}${selected}${
+            truncated ? `\n\n[Output truncated at ${maxBytes} bytes; file size: ${fileStat.size} bytes]` : ''
           }`,
         }],
       }
@@ -339,7 +339,7 @@ export function registerFsTools(server: McpServer) {
             while (Buffer.byteLength(text, 'utf-8') > maxBytesPerFile) {
               text = text.slice(0, -1)
             }
-            text += `\\n[Truncated at ${maxBytesPerFile} bytes; file size: ${bytes} bytes]`
+            text += `\n[Truncated at ${maxBytesPerFile} bytes; file size: ${bytes} bytes]`
           }
           results.push({path, ok: true, size: bytes, content: text})
         } catch (error) {
@@ -382,7 +382,8 @@ export function registerFsTools(server: McpServer) {
           )
         }
 
-        content = content.replace(patch.old, patch.new)
+        const matchIndex = content.indexOf(patch.old)
+        content = content.slice(0, matchIndex) + patch.new + content.slice(matchIndex + patch.old.length)
       }
 
       await writeFile(full, content, 'utf-8')
@@ -446,20 +447,14 @@ export function registerFsTools(server: McpServer) {
         updated = original + content
       } else if (mode === 'replace_lines') {
         if (startLine === undefined) throw new Error('startLine is required for replace_lines')
-        if (endLine !== undefined && endLine < startLine) {
-          throw new Error('endLine must be greater than or equal to startLine')
-        }
-        const lines = original.split(/\\r?\\n/)
-        const from = startLine - 1
-        const to = endLine ?? startLine
-        updated = [...lines.slice(0, from), ...content.split(/\\r?\\n/), ...lines.slice(to)].join('\\n')
+        updated = replaceLines(original, content, startLine, endLine)
       } else {
         updated = content
       }
 
       if (dryRun) {
-        const before = original.split(/\\r?\\n/)
-        const after = updated.split(/\\r?\\n/)
+        const before = original.split(/\r\n|\n|\r/)
+        const after = updated.split(/\r\n|\n|\r/)
         const preview = [
           ...before.slice(0, maxPreviewLines).map((line) => `- ${line}`),
           ...after.slice(0, maxPreviewLines).map((line) => `+ ${line}`),
@@ -467,8 +462,8 @@ export function registerFsTools(server: McpServer) {
         return {
           content: [{
             type: 'text',
-            text: `Dry run — no changes written to ${path}\\n${preview.join('\\n')}${
-              before.length + after.length > maxPreviewLines ? '\\n... preview truncated' : ''
+            text: `Dry run — no changes written to ${path}\n${preview.join('\n')}${
+              before.length + after.length > maxPreviewLines ? '\n... preview truncated' : ''
             }`,
           }],
         }
@@ -510,9 +505,12 @@ export function registerFsTools(server: McpServer) {
         throw new Error(`Only files can be deleted: ${path}`)
       }
 
-      const normalizedPath = path.replace(/\\\\/g, '/')
+      const normalizedPath = path.replace(/\\/g, '/')
       const tracked = await runCommand('git', ['ls-files', '--error-unmatch', '--', normalizedPath])
       if (!tracked.ok) {
+        if (tracked.code !== 1) {
+          throw new Error(`Unable to verify Git tracking status for ${path}: ${tracked.stderr || tracked.stdout}`)
+        }
         if (!allowUntracked) {
           throw new Error(`Deletion denied: file is untracked; set allowUntracked=true to delete it: ${path}`)
         }
