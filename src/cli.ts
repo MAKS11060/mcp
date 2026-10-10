@@ -24,7 +24,7 @@ if (command === 'init' || values.init) {
 
   try {
     await Deno.stat(configPath)
-    console.error(`Конфигурация уже существует: ${configPath}`)
+    console.error(`Configuration already exists: ${configPath}`)
     Deno.exit(1)
   } catch (error) {
     if (!(error instanceof Deno.errors.NotFound)) throw error
@@ -53,7 +53,7 @@ if (command === 'init' || values.init) {
 
   await mkdir(dirname(configPath), {recursive: true})
   await writeFile(configPath, JSON.stringify(config, null, 2) + '\n')
-  console.log(`Создана конфигурация: ${configPath}`)
+  console.log(`Configuration created: ${configPath}`)
   Deno.exit(0)
 }
 

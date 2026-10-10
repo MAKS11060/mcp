@@ -9,7 +9,7 @@ async function runToolBin(bin: string, args: string[], timeout?: number) {
   if (isLocalBin(bins, bin)) {
     return runBin(bin, args, {timeout, env: {NO_COLOR: '1'}})
   }
-  // глобальная команда
+  // Global command
   return runCommand(bin, args, {timeout, env: {NO_COLOR: '1'}})
 }
 
@@ -47,7 +47,7 @@ export async function registerDprintTools(server: McpServer) {
           content: [{
             type: 'text',
             text: result.ok
-              ? '✓ Форматирование в порядке'
+              ? '✓ Formatting is valid'
               : `${lines.slice(0, maxOutput).join('\n')}${
                 truncated ? `\n\n... output truncated (${lines.length} lines total)` : ''
               }`,
@@ -78,7 +78,7 @@ export async function registerDprintTools(server: McpServer) {
           content: [{
             type: 'text',
             text: result.ok
-              ? `✓ Отформатировано${files?.length ? `: ${files.join(', ')}` : ''}`
+              ? `✓ Formatted${files?.length ? `: ${files.join(', ')}` : ''}`
               : (result.stderr || result.stdout),
           }],
         }

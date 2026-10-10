@@ -40,7 +40,9 @@ export function registerPackageJsonTools(server: McpServer) {
         return {
           content: [{
             type: 'text',
-            text: `Скрипт "${script}" не найден в package.json.\nДоступные: ${scripts.join(', ') || '(нет)'}`,
+            text: `Script "${script}" was not found in package.json.\nAvailable scripts: ${
+              scripts.join(', ') || '(none)'
+            }`,
           }],
         }
       }
@@ -55,7 +57,7 @@ export function registerPackageJsonTools(server: McpServer) {
           type: 'text',
           text: result.ok
             ? (result.stdout || result.all || `✓ ${pm} run ${script}`)
-            : `Ошибка (${result.code}):\n${result.stderr || result.stdout || result.all}`,
+            : `Command failed (${result.code}):\n${result.stderr || result.stdout || result.all}`,
         }],
       }
     },
@@ -84,7 +86,7 @@ export function registerPackageJsonTools(server: McpServer) {
       return {
         content: [{
           type: 'text',
-          text: detail || '(scripts отсутствуют)',
+          text: detail || '(no scripts defined)',
         }],
       }
     },

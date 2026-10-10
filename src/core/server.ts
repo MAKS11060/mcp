@@ -56,7 +56,7 @@ export async function startServer(configFile?: string) {
   const certPath = serverConfig.cert ?? Deno.env.get('CERT')
 
   if (Boolean(keyPath) !== Boolean(certPath)) {
-    throw new Error('server.key и server.cert должны быть указаны вместе')
+    throw new Error('server.key and server.cert must be provided together')
   }
 
   const useTls = Boolean(keyPath && certPath)

@@ -12,8 +12,8 @@ let cached: BinAvailability | null = null
 const checkedGlobal = new Set<string>()
 
 /**
- * Собирает имена бинарников из node_modules/.bin
- * (на Windows игнорирует .cmd / .ps1 суффиксы).
+ * Collect executable names from node_modules/.bin
+ * (ignore .cmd / .ps1 suffixes on Windows).
  */
 async function listLocalBins(): Promise<Set<string>> {
   const binDir = join(getProjectRoot(), 'node_modules', '.bin')
@@ -31,13 +31,13 @@ async function listLocalBins(): Promise<Set<string>> {
       }
     }
   } catch {
-    // node_modules/.bin нет
+    // node_modules/.bin does not exist
   }
 
   return names
 }
 
-/** Проверяет, есть ли команда в PATH */
+/** Check whether a command is available on PATH */
 async function isOnPath(bin: string): Promise<boolean> {
   try {
     // Windows: where, Unix: command -v / which
@@ -78,7 +78,7 @@ export function hasBin(bins: BinAvailability, name: string): boolean {
   return bins.local.has(name) || bins.global.has(name)
 }
 
-/** Локальный → через pm exec, глобальный → напрямую */
+/** Run local binaries through the package manager and global binaries directly */
 export function isLocalBin(bins: BinAvailability, name: string): boolean {
   return bins.local.has(name)
 }

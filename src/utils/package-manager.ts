@@ -7,8 +7,8 @@ export type PackageManager = 'pnpm' | 'npm' | 'yarn' | 'bun'
 let cached: PackageManager | null = null
 
 /**
- * Определяет package manager из package.json → packageManager
- * или по lock-файлам. По умолчанию pnpm.
+ * Detect the package manager from package.json → packageManager
+ * or from lockfiles. Defaults to pnpm.
  */
 export async function detectPackageManager(): Promise<PackageManager> {
   if (cached) return cached
@@ -30,13 +30,13 @@ export async function detectPackageManager(): Promise<PackageManager> {
     // ignore
   }
 
-  // fallback по lock-файлам можно добавить позже
+  // Lockfile-based fallback can be added later
   cached = 'pnpm'
   return cached
 }
 
 /**
- * Возвращает команду + args для запуска бинарника из node_modules.
+ * Return the command and arguments used to run a binary from node_modules.
  * pnpm → pnpm exec <bin> ...
  * npm  → npx <bin> ...
  * yarn → yarn <bin> ...

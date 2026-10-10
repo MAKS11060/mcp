@@ -31,7 +31,7 @@ export async function runCommand(
 }
 
 /**
- * Запускает бинарник из зависимостей проекта через package manager
+ * Run a project dependency binary through the package manager
  * (pnpm exec / npx / yarn / bunx).
  */
 export async function runBin(
