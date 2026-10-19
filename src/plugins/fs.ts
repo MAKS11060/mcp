@@ -8,15 +8,17 @@ import {
   stat,
   writeFile,
 } from 'node:fs/promises'
-import {join} from 'node:path'
+import {join, matchesGlob} from 'node:path'
 import {z} from 'zod'
 import {runCommand} from '../utils/exec.ts'
-import {replaceLines} from '../utils/lines.ts'
+import {withFileLock} from '../utils/file-lock.ts'
+import {getFileRevision} from '../utils/file-revision.ts'
+import {replaceLines, splitLines} from '../utils/lines.ts'
 import {logAction} from '../utils/logger.ts'
 import {pathExists, safeResolve, toRelative} from '../utils/path.ts'
 
 function getLines(content: string, startLine: number, endLine?: number, lineCount?: number) {
-  const lines = content.split(/\r\n|\n|\r/)
+  const lines = splitLines(content)
   const start = Math.max(0, startLine - 1)
   const end = Math.min(lines.length, endLine ?? (start + (lineCount ?? lines.length)))
 
@@ -186,7 +188,7 @@ export function registerFsTools(server: McpServer) {
       if (targetStat.isDirectory()) {
         for await (const file of glob(include, {cwd: full})) {
           const candidate = join(full, file)
-          if (exclude.some((rule) => file === rule || file.startsWith(rule.replace(/\*\*$/, '')))) continue
+          if (exclude.some((rule) => matchesGlob(file, rule))) continue
           if ((await stat(candidate)).isFile()) files.push(candidate)
         }
       }
@@ -206,7 +208,7 @@ export function registerFsTools(server: McpServer) {
           continue
         }
 
-        const lines = content.split(/\r\n|\n|\r/)
+        const lines = splitLines(content)
         for (let i = 0; i < lines.length && results.length < maxResults; i++) {
           const candidate = caseInsensitive ? lines[i].toLowerCase() : lines[i]
           const matched = matcher ? matcher.test(lines[i]) : candidate.includes(searchPattern)
@@ -265,7 +267,7 @@ export function registerFsTools(server: McpServer) {
 
       const fileStat = await stat(full)
       const content = await readFile(full, 'utf-8')
-      const totalLines = content.split(/\r\n|\n|\r/).length
+      const totalLines = splitLines(content).length
 
       if (tail !== undefined && (endLine !== undefined || lineCount !== undefined || startLine !== 1)) {
         throw new Error('tail cannot be combined with startLine, endLine, or lineCount')
@@ -302,7 +304,7 @@ export function registerFsTools(server: McpServer) {
       return {
         content: [{
           type: 'text',
-          text: `${rangeLabel ? `${rangeLabel}\n` : ''}${selected}${
+          text: `[revision: ${getFileRevision(content)}]\n${rangeLabel ? `${rangeLabel}\n` : ''}${selected}${
             truncated ? `\n\n[Output truncated at ${maxBytes} bytes; file size: ${fileStat.size} bytes]` : ''
           }`,
         }],
@@ -341,7 +343,7 @@ export function registerFsTools(server: McpServer) {
             }
             text += `\n[Truncated at ${maxBytesPerFile} bytes; file size: ${bytes} bytes]`
           }
-          results.push({path, ok: true, size: bytes, content: text})
+          results.push({path, ok: true, size: bytes, revision: getFileRevision(content), content: text})
         } catch (error) {
           results.push({path, ok: false, error: error instanceof Error ? error.message : String(error)})
         }
@@ -362,35 +364,46 @@ export function registerFsTools(server: McpServer) {
           old: z.string().min(1),
           new: z.string(),
         })).min(1),
+        expectedRevision: z.string().optional().describe(
+          'Expected SHA-256 revision from fs_read_file or fs_read_files; reject the patch if the file has changed',
+        ),
       }),
     },
-    async ({path, patches}) => {
+    async ({path, patches, expectedRevision}) => {
       const full = safeResolve(path)
-      await logAction('fs', 'patch', {path, patches: patches.length})
+      await logAction('fs', 'patch', {path, patches: patches.length, expectedRevision})
 
-      if (!(await pathExists(full))) {
-        throw new Error(`File not found: ${path}`)
-      }
+      return await withFileLock(full, async () => {
+        if (!(await pathExists(full))) {
+          throw new Error(`File not found: ${path}`)
+        }
 
-      let content = await readFile(full, 'utf-8')
-
-      for (const [index, patch] of patches.entries()) {
-        const occurrences = content.split(patch.old).length - 1
-        if (occurrences !== 1) {
+        let content = await readFile(full, 'utf-8')
+        const actualRevision = getFileRevision(content)
+        if (expectedRevision !== undefined && expectedRevision !== actualRevision) {
           throw new Error(
-            `Patch #${index + 1}: old fragment must occur exactly once; found: ${occurrences}`,
+            `File changed since it was read (expected revision ${expectedRevision}, actual ${actualRevision})`,
           )
         }
 
-        const matchIndex = content.indexOf(patch.old)
-        content = content.slice(0, matchIndex) + patch.new + content.slice(matchIndex + patch.old.length)
-      }
+        for (const [index, patch] of patches.entries()) {
+          const occurrences = content.split(patch.old).length - 1
+          if (occurrences !== 1) {
+            throw new Error(
+              `Patch #${index + 1}: old fragment must occur exactly once; found: ${occurrences}`,
+            )
+          }
 
-      await writeFile(full, content, 'utf-8')
+          const matchIndex = content.indexOf(patch.old)
+          content = content.slice(0, matchIndex) + patch.new + content.slice(matchIndex + patch.old.length)
+        }
 
-      return {
-        content: [{type: 'text', text: `Updated: ${path}`}],
-      }
+        await writeFile(full, content, 'utf-8')
+
+        return {
+          content: [{type: 'text', text: `Updated: ${path}`}],
+        }
+      })
     },
   )
 
@@ -428,53 +441,89 @@ export function registerFsTools(server: McpServer) {
         startLine: z.number().int().min(1).optional().describe(
           'First line to replace, inclusive; required for replace_lines',
         ),
-        endLine: z.number().int().min(1).optional().describe('Last line to replace, inclusive; defaults to startLine'),
+        endLine: z.number().int().min(1).optional().describe(
+          'Last line to replace, inclusive; mutually exclusive with lineCount',
+        ),
+        lineCount: z.number().int().min(1).max(10000).optional().describe(
+          'Number of lines to replace starting at startLine; mutually exclusive with endLine',
+        ),
+        expectedRevision: z.string().optional().describe(
+          'Expected SHA-256 revision from fs_read_file or fs_read_files; reject the write if the file has changed',
+        ),
         dryRun: z.boolean().default(false).describe('Preview the change without writing to disk'),
         maxPreviewLines: z.number().int().min(1).max(500).default(100).describe(
           'Maximum diff lines to return in preview mode',
         ),
       }),
     },
-    async ({path, content, mode, startLine, endLine, dryRun, maxPreviewLines}) => {
+    async ({path, content, mode, startLine, endLine, lineCount, expectedRevision, dryRun, maxPreviewLines}) => {
       const full = safeResolve(path)
-      await logAction('fs', 'write_file', {path, mode, bytes: content.length, dryRun})
+      await logAction('fs', 'write_file', {
+        path,
+        mode,
+        bytes: content.length,
+        startLine,
+        endLine,
+        lineCount,
+        expectedRevision,
+        dryRun,
+      })
 
-      const exists = await pathExists(full)
-      const original = exists ? await readFile(full, 'utf-8') : ''
-      let updated: string
-
-      if (mode === 'append') {
-        updated = original + content
-      } else if (mode === 'replace_lines') {
-        if (startLine === undefined) throw new Error('startLine is required for replace_lines')
-        updated = replaceLines(original, content, startLine, endLine)
-      } else {
-        updated = content
+      if (endLine !== undefined && lineCount !== undefined) {
+        throw new Error('Use either endLine or lineCount, not both')
+      }
+      if (
+        (startLine !== undefined || endLine !== undefined || lineCount !== undefined)
+        && mode !== 'replace_lines'
+      ) {
+        throw new Error('startLine, endLine, and lineCount can only be used with mode: replace_lines')
       }
 
-      if (dryRun) {
-        const before = original.split(/\r\n|\n|\r/)
-        const after = updated.split(/\r\n|\n|\r/)
-        const preview = [
-          ...before.slice(0, maxPreviewLines).map((line) => `- ${line}`),
-          ...after.slice(0, maxPreviewLines).map((line) => `+ ${line}`),
-        ].slice(0, maxPreviewLines)
-        return {
-          content: [{
-            type: 'text',
-            text: `Dry run — no changes written to ${path}\n${preview.join('\n')}${
-              before.length + after.length > maxPreviewLines ? '\n... preview truncated' : ''
-            }`,
-          }],
+      return await withFileLock(full, async () => {
+        const exists = await pathExists(full)
+        const original = exists ? await readFile(full, 'utf-8') : ''
+        const actualRevision = getFileRevision(original)
+        if (expectedRevision !== undefined && expectedRevision !== actualRevision) {
+          throw new Error(
+            `File changed since it was read (expected revision ${expectedRevision}, actual ${actualRevision})`,
+          )
         }
-      }
+        let updated: string
 
-      await mkdir(join(full, '..'), {recursive: true})
-      await writeFile(full, updated, 'utf-8')
+        if (mode === 'append') {
+          updated = original + content
+        } else if (mode === 'replace_lines') {
+          if (startLine === undefined) throw new Error('startLine is required for replace_lines')
+          const effectiveEndLine = endLine ?? (lineCount === undefined ? startLine : startLine + lineCount - 1)
+          updated = replaceLines(original, content, startLine, effectiveEndLine)
+        } else {
+          updated = content
+        }
 
-      return {
-        content: [{type: 'text', text: `Written: ${path} (${mode})`}],
-      }
+        if (dryRun) {
+          const before = splitLines(original)
+          const after = splitLines(updated)
+          const preview = [
+            ...before.slice(0, maxPreviewLines).map((line) => `- ${line}`),
+            ...after.slice(0, maxPreviewLines).map((line) => `+ ${line}`),
+          ].slice(0, maxPreviewLines)
+          return {
+            content: [{
+              type: 'text',
+              text: `Dry run — no changes written to ${path}\n${preview.join('\n')}${
+                before.length + after.length > maxPreviewLines ? '\n... preview truncated' : ''
+              }`,
+            }],
+          }
+        }
+
+        await mkdir(join(full, '..'), {recursive: true})
+        await writeFile(full, updated, 'utf-8')
+
+        return {
+          content: [{type: 'text', text: `Written: ${path} (${mode})`}],
+        }
+      })
     },
   )
 
@@ -496,41 +545,43 @@ export function registerFsTools(server: McpServer) {
       const full = safeResolve(path)
       await logAction('fs', 'delete_file', {path, allowUntracked})
 
-      if (!(await pathExists(full))) {
-        throw new Error(`File not found: ${path}`)
-      }
-
-      const s = await stat(full)
-      if (!s.isFile()) {
-        throw new Error(`Only files can be deleted: ${path}`)
-      }
-
-      const normalizedPath = path.replace(/\\/g, '/')
-      const tracked = await runCommand('git', ['ls-files', '--error-unmatch', '--', normalizedPath])
-      if (!tracked.ok) {
-        if (tracked.code !== 1) {
-          throw new Error(`Unable to verify Git tracking status for ${path}: ${tracked.stderr || tracked.stdout}`)
-        }
-        if (!allowUntracked) {
-          throw new Error(`Deletion denied: file is untracked; set allowUntracked=true to delete it: ${path}`)
-        }
-      } else {
-        const committed = await runCommand('git', ['cat-file', '-e', `HEAD:${normalizedPath}`])
-        if (!committed.ok) {
-          throw new Error(`Deletion denied: file is not present in HEAD: ${path}`)
+      return await withFileLock(full, async () => {
+        if (!(await pathExists(full))) {
+          throw new Error(`File not found: ${path}`)
         }
 
-        const clean = await runCommand('git', ['diff', '--quiet', 'HEAD', '--', normalizedPath])
-        if (!clean.ok) {
-          throw new Error(`Deletion denied: file has uncommitted changes: ${path}`)
+        const s = await stat(full)
+        if (!s.isFile()) {
+          throw new Error(`Only files can be deleted: ${path}`)
         }
-      }
 
-      await rm(full)
+        const normalizedPath = path.replace(/\\/g, '/')
+        const tracked = await runCommand('git', ['ls-files', '--error-unmatch', '--', normalizedPath])
+        if (!tracked.ok) {
+          if (tracked.code !== 1) {
+            throw new Error(`Unable to verify Git tracking status for ${path}: ${tracked.stderr || tracked.stdout}`)
+          }
+          if (!allowUntracked) {
+            throw new Error(`Deletion denied: file is untracked; set allowUntracked=true to delete it: ${path}`)
+          }
+        } else {
+          const committed = await runCommand('git', ['cat-file', '-e', `HEAD:${normalizedPath}`])
+          if (!committed.ok) {
+            throw new Error(`Deletion denied: file is not present in HEAD: ${path}`)
+          }
 
-      return {
-        content: [{type: 'text', text: `Deleted: ${path} (can be restored from Git)`}],
-      }
+          const clean = await runCommand('git', ['diff', '--quiet', 'HEAD', '--', normalizedPath])
+          if (!clean.ok) {
+            throw new Error(`Deletion denied: file has uncommitted changes: ${path}`)
+          }
+        }
+
+        await rm(full)
+
+        return {
+          content: [{type: 'text', text: `Deleted: ${path} (can be restored from Git)`}],
+        }
+      })
     },
   )
 
