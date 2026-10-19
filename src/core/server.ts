@@ -2,6 +2,7 @@ import {StreamableHTTPTransport} from '@hono/mcp'
 import {Hono} from 'hono'
 import {mkdir} from 'node:fs/promises'
 import {dirname, resolve} from 'node:path'
+import process from 'node:process'
 import {loadConfig} from '../config.ts'
 import {configureLogger} from '../utils/logger.ts'
 import {getProjectRoot} from '../utils/path.ts'
@@ -13,9 +14,12 @@ export async function startServer(configFile?: string) {
 
   const serverConfig = config.server ?? {}
   const mcpConfig = config.mcp ?? {}
-  const port = serverConfig.port ?? (Number(Deno.env.get('PORT')) || 8787)
-  const host = serverConfig.host ?? Deno.env.get('MCP_HOST') ?? '0.0.0.0'
-  const mcpPath = mcpConfig.path ?? Deno.env.get('MCP_PATH') ?? '/mcp'
+  const port = process.env.PORT !== undefined
+    ? Number(process.env.PORT)
+    : serverConfig.port ?? 8787
+  const host = process.env.HOST ?? serverConfig.host ?? '0.0.0.0'
+  const configuredMcpPath = process.env.MCP_PATH ?? mcpConfig.path ?? '/mcp'
+  const mcpPath = configuredMcpPath.startsWith('/') ? configuredMcpPath : `/${configuredMcpPath}`
 
   const logFile = mcpConfig.log === 'file'
     ? resolve(dirname(configPath), mcpConfig.log_path ?? '.mcp/mcp.log')
@@ -52,8 +56,8 @@ export async function startServer(configFile?: string) {
     return transport.handleRequest(c)
   })
 
-  const keyPath = serverConfig.key ?? Deno.env.get('KEY')
-  const certPath = serverConfig.cert ?? Deno.env.get('CERT')
+  const keyPath = process.env.KEY ?? serverConfig.key
+  const certPath = process.env.CERT ?? serverConfig.cert
 
   if (Boolean(keyPath) !== Boolean(certPath)) {
     throw new Error('server.key and server.cert must be provided together')
@@ -63,12 +67,9 @@ export async function startServer(configFile?: string) {
 
   const onListen = (addr: Deno.NetAddr) => {
     const scheme = useTls ? 'https' : 'http'
-    console.log(`${scheme}://${addr.hostname}:${addr.port}`)
-    console.log(
-      `${scheme}://${addr.hostname}:${addr.port}${mcpPath}?t=${Math.floor(Date.now() / 1000)} | ${
-        config.config?.name ?? 'mcp'
-      }`,
-    )
+    const endpoint = new URL(`${scheme}://${addr.hostname}:${addr.port}${mcpPath}`)
+    endpoint.searchParams.set('t', String(Math.floor(Date.now() / 1000)))
+    console.log(`${endpoint.href} | ${config.config?.name ?? 'mcp'}`)
 
     console.log(`Project root %c${getProjectRoot()}`, 'color: green')
   }

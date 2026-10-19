@@ -2,18 +2,45 @@
 
 import {mkdir, writeFile} from 'node:fs/promises'
 import {dirname} from 'node:path'
+import process from 'node:process'
 import {parseArgs} from 'node:util'
 import {DEFAULT_CONFIG, DEFAULT_MCP_CONFIG, loadConfig, type McpConfig} from './config.ts'
 import {startServer} from './core/server.ts'
 
+const args = [...process.argv.slice(2)]
+const envFileIndex = args.indexOf('--env-file')
+const envFileRequested = args.some((arg) => arg === '--env-file' || arg.startsWith('--env-file='))
+
+if (envFileIndex !== -1 && (!args[envFileIndex + 1] || args[envFileIndex + 1].startsWith('--'))) {
+  args[envFileIndex] = '--env-file=.env'
+}
+
 const {values, positionals} = parseArgs({
+  args,
   options: {
     config: {type: 'string', short: 'c'},
+    'env-file': {type: 'string'},
     init: {type: 'boolean'},
   },
   allowPositionals: true,
   strict: true,
 })
+
+const envKeys = ['PORT', 'HOST', 'CERT', 'KEY', 'MCP_PATH'] as const
+const hasEnvOverrides = envKeys.some((key) => process.env[key] !== undefined)
+
+if (values['env-file'] !== undefined || hasEnvOverrides) {
+  try {
+    process.loadEnvFile(values['env-file'] ?? '.env')
+  } catch (error) {
+    if (
+      envFileRequested
+      || !(error instanceof Error && 'code' in error && error.code === 'ENOENT')
+    ) {
+      throw error
+    }
+  }
+}
 
 const command = positionals[0]
 const configFile = values.config ?? DEFAULT_CONFIG

@@ -1,13 +1,5 @@
 import type {McpServer} from '@modelcontextprotocol/sdk/server/mcp.js'
-import {
-  glob, // Node 22+
-  mkdir,
-  readdir,
-  readFile,
-  rm,
-  stat,
-  writeFile,
-} from 'node:fs/promises'
+import {glob, mkdir, readdir, readFile, rm, stat, writeFile} from 'node:fs/promises'
 import {join, matchesGlob} from 'node:path'
 import {z} from 'zod'
 import {runCommand} from '../utils/exec.ts'
