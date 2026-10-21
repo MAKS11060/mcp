@@ -1,20 +1,17 @@
 import type {McpServer} from '@modelcontextprotocol/sdk/server/mcp.js'
 import {readFile} from 'node:fs/promises'
-import {join} from 'node:path'
+import {dirname} from 'node:path'
 import {z} from 'zod'
 import {runCommand} from '../utils/exec.ts'
 import {logAction} from '../utils/logger.ts'
 import {detectPackageManager} from '../utils/package-manager.ts'
-import {getProjectRoot} from '../utils/path.ts'
+import {safeResolve} from '../utils/path.ts'
 
-async function listScripts(): Promise<string[]> {
-  try {
-    const raw = await readFile(join(getProjectRoot(), 'package.json'), 'utf-8')
-    const pkg = JSON.parse(raw) as {scripts?: Record<string, string>}
-    return Object.keys(pkg.scripts ?? {})
-  } catch {
-    return []
-  }
+async function readPackageJson(packageJsonPath: string) {
+  const fullPath = safeResolve(packageJsonPath)
+  const raw = await readFile(fullPath, 'utf-8')
+  const pkg = JSON.parse(raw) as {scripts?: Record<string, string>}
+  return {fullPath, pkg}
 }
 
 export function registerPackageJsonTools(server: McpServer) {
@@ -22,25 +19,45 @@ export function registerPackageJsonTools(server: McpServer) {
     'run_script',
     {
       description:
-        'Run an npm script from package.json through the detected package manager. Only existing scripts can be run',
+        'Run an npm script from a selected package.json through the detected package manager. Only existing scripts can be run',
       annotations: {readOnlyHint: false, destructiveHint: true, idempotentHint: false, openWorldHint: true},
       inputSchema: z.object({
         script: z.string().min(1).describe('Script name from package.json'),
+        packageJsonPath: z.string().default('package.json').describe(
+          'Path to package.json, relative to the project root',
+        ),
         args: z
           .array(z.string())
           .optional()
           .describe('Additional arguments passed after --'),
       }),
     },
-    async ({script, args}) => {
-      await logAction('code', 'run_script', {script, args})
+    async ({script, packageJsonPath, args}) => {
+      await logAction('code', 'run_script', {script, packageJsonPath, args})
 
-      const scripts = await listScripts()
+      let fullPath: string
+      let scripts: string[]
+      try {
+        const result = await readPackageJson(packageJsonPath)
+        fullPath = result.fullPath
+        scripts = Object.keys(result.pkg.scripts ?? {})
+      } catch (error) {
+        return {
+          content: [{
+            type: 'text',
+            text: `Failed to read package.json at "${packageJsonPath}": ${
+              error instanceof Error ? error.message : String(error)
+            }`,
+          }],
+          isError: true,
+        }
+      }
+
       if (!scripts.includes(script)) {
         return {
           content: [{
             type: 'text',
-            text: `Script "${script}" was not found in package.json.\nAvailable scripts: ${
+            text: `Script "${script}" was not found in ${packageJsonPath}.\nAvailable scripts: ${
               scripts.join(', ') || '(none)'
             }`,
           }],
@@ -50,7 +67,10 @@ export function registerPackageJsonTools(server: McpServer) {
       const pm = await detectPackageManager()
       const cmdArgs = args?.length ? ['run', script, '--', ...args] : ['run', script]
 
-      const result = await runCommand(pm, cmdArgs, {timeout: 180_000})
+      const result = await runCommand(pm, cmdArgs, {
+        cwd: dirname(fullPath),
+        timeout: 180_000,
+      })
 
       return {
         content: [{
@@ -66,28 +86,39 @@ export function registerPackageJsonTools(server: McpServer) {
   server.registerTool(
     'list_scripts',
     {
-      description: 'List scripts defined in package.json',
+      description: 'List scripts defined in a selected package.json',
       annotations: {readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false},
-      inputSchema: z.object({}),
+      inputSchema: z.object({
+        packageJsonPath: z.string().default('package.json').describe(
+          'Path to package.json, relative to the project root',
+        ),
+      }),
     },
-    async () => {
-      const scripts = await listScripts()
-      let detail = ''
-      try {
-        const raw = await readFile(join(getProjectRoot(), 'package.json'), 'utf-8')
-        const pkg = JSON.parse(raw) as {scripts?: Record<string, string>}
-        detail = Object.entries(pkg.scripts ?? {})
-          .map(([k, v]) => `${k}: ${v}`)
-          .join('\n')
-      } catch {
-        detail = scripts.join('\n')
-      }
+    async ({packageJsonPath}) => {
+      await logAction('code', 'list_scripts', {packageJsonPath})
 
-      return {
-        content: [{
-          type: 'text',
-          text: detail || '(no scripts defined)',
-        }],
+      try {
+        const {pkg} = await readPackageJson(packageJsonPath)
+        const detail = Object.entries(pkg.scripts ?? {})
+          .map(([name, command]) => `${name}: ${command}`)
+          .join('\n')
+
+        return {
+          content: [{
+            type: 'text',
+            text: detail || '(no scripts defined)',
+          }],
+        }
+      } catch (error) {
+        return {
+          content: [{
+            type: 'text',
+            text: `Failed to read package.json at "${packageJsonPath}": ${
+              error instanceof Error ? error.message : String(error)
+            }`,
+          }],
+          isError: true,
+        }
       }
     },
   )
