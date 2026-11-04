@@ -32,15 +32,28 @@ export const McpOptionsSchema = z.object({
   log_path: z.string().optional(),
 })
 
+export const McpStdioServerSchema = z.object({
+  command: z.string().min(1),
+  args: z.array(z.string()).optional(),
+  env: z.record(z.string(), z.string()).optional(),
+  cwd: z.string().optional(),
+  auth: z.discriminatedUnion('type', [
+    z.object({type: z.literal('none')}),
+    z.object({type: z.literal('token'), token: z.string().min(1)}),
+  ]).optional(),
+})
+
 export const McpConfigSchema = z.object({
   $schema: z.string().optional(),
   server: McpServerOptionsSchema.optional(),
   mcp: McpOptionsSchema.optional(),
   config: McpServerConfigSchema.optional(),
   plugins: z.array(z.string()).optional(),
+  mcpServers: z.record(z.string().regex(/^[a-zA-Z0-9][a-zA-Z0-9._-]*$/), McpStdioServerSchema).optional(),
 })
 
 export type McpConfig = z.infer<typeof McpConfigSchema>
+export type McpStdioServerConfig = z.infer<typeof McpStdioServerSchema>
 
 export const mcpConfigJsonSchema = z.toJSONSchema(McpConfigSchema)
 

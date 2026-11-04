@@ -91,6 +91,31 @@ When `mcp.log` is `"file"`, `mcp.log_path` specifies the log file. It defaults t
 
 The `config` object contains MCP server metadata. `name` is the technical server name and `title` is its human-readable title. `plugins` controls which plugins are loaded.
 
+### External MCP servers
+
+`mcpServers` starts external stdio MCP servers and exposes each one through its own Streamable HTTP endpoint at `/mcp/{key}`. The key must contain only letters, numbers, dots, underscores, and hyphens. Child processes are started when a client initializes a session and are stopped when that session is closed or the gateway shuts down.
+
+```json
+{
+  "mcpServers": {
+    "vscode-mcp": {
+      "command": "npx",
+      "args": ["-y", "@vscode-mcp/vscode-mcp-server@latest"],
+      "cwd": "./",
+      "env": {},
+      "auth": {
+        "type": "token",
+        "token": "replace-with-a-long-random-token"
+      }
+    }
+  }
+}
+```
+
+The example is available at `https://your-domain.example/mcp/vscode-mcp`. Omit `auth` or set `{"type":"none"}` to disable authentication. For an internet-accessible server, use `token`: clients must send `Authorization: Bearer <token>`. The token is checked by the gateway and is never forwarded to the child MCP process.
+
+`command` and `args` are passed directly to the process launcher without a shell. `cwd`, when specified, is resolved relative to the configuration file. Environment variables are inherited using the MCP SDK's safe default environment allowlist, then overridden by `env`.
+
 ## Development
 
 ```bash

@@ -7,6 +7,7 @@ import {loadConfig} from '../config.ts'
 import {configureLogger} from '../utils/logger.ts'
 import {getProjectRoot} from '../utils/path.ts'
 import {createMcpServer} from './create-server.ts'
+import {McpProxyManager} from './proxy.ts'
 
 export async function startServer(configFile?: string) {
   const cwd = Deno.cwd()
@@ -20,6 +21,15 @@ export async function startServer(configFile?: string) {
   const host = process.env.HOST ?? serverConfig.host ?? '0.0.0.0'
   const configuredMcpPath = process.env.MCP_PATH ?? mcpConfig.path ?? '/mcp'
   const mcpPath = configuredMcpPath.startsWith('/') ? configuredMcpPath : `/${configuredMcpPath}`
+
+  const proxyManager = new McpProxyManager(config.mcpServers ?? {}, dirname(configPath))
+
+  for (const key of Object.keys(config.mcpServers ?? {})) {
+    const proxyPath = `/mcp/${key}`
+    if (proxyPath === mcpPath) {
+      throw new Error(`mcpServers.${key} endpoint conflicts with the built-in MCP path: ${mcpPath}`)
+    }
+  }
 
   const logFile = mcpConfig.log === 'file'
     ? resolve(dirname(configPath), mcpConfig.log_path ?? '.mcp/mcp.log')
@@ -56,6 +66,8 @@ export async function startServer(configFile?: string) {
     return transport.handleRequest(c)
   })
 
+  proxyManager.register(app)
+
   const keyPath = process.env.KEY ?? serverConfig.key
   const certPath = process.env.CERT ?? serverConfig.cert
 
@@ -71,8 +83,18 @@ export async function startServer(configFile?: string) {
     endpoint.searchParams.set('t', String(Math.floor(Date.now() / 1000)))
     console.log(`${endpoint.href} | ${config.config?.name ?? 'mcp'}`)
 
+    for (const key of Object.keys(config.mcpServers ?? {})) {
+      console.log(`${scheme}://${addr.hostname}:${addr.port}/mcp/${key}`)
+    }
+
     console.log(`Project root %c${getProjectRoot()}`, 'color: green')
   }
+
+  const shutdown = () => {
+    void proxyManager.close()
+  }
+  process.once('SIGINT', shutdown)
+  process.once('SIGTERM', shutdown)
 
   if (useTls) {
     const key = Deno.readTextFileSync(resolve(dirname(configPath), keyPath!))
@@ -83,12 +105,20 @@ export async function startServer(configFile?: string) {
       port,
       key,
       cert,
+      onError: (error) => {
+        console.error('[http] Server error:', error)
+        return new Response('Internal Server Error', {status: 500})
+      },
     }, app.fetch)
   } else {
     Deno.serve({
       onListen,
       hostname: host,
       port,
+      onError: (error) => {
+        console.error('[http] Server error:', error)
+        return new Response('Internal Server Error', {status: 500})
+      },
     }, app.fetch)
   }
 }
