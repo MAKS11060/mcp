@@ -1,6 +1,6 @@
 import type {McpServer} from '@modelcontextprotocol/sdk/server/mcp.js'
-import {resolvePluginPath} from './config.ts'
 import type {McpConfig} from './config.ts'
+import {resolvePluginPath} from './config.ts'
 import type {McpPlugin, McpPluginContext} from './plugin.ts'
 import {registerDprintTools} from './plugins/dprint.ts'
 import {registerFsTools} from './plugins/fs.ts'

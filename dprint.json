@@ -6,9 +6,9 @@
     "importDeclaration.spaceSurroundingNamedImports": false,
     "lineWidth": 120,
     "quoteStyle": "alwaysSingle",
-    "semiColons": "asi",
     "spaceAround": false,
     "spaceSurroundingProperties": false,
+    "semicolons": "asi",
   },
   "json": {
     "trailingCommas": "jsonc",
@@ -23,9 +23,9 @@
     "!.mcp.json",
   ],
   "plugins": [
-    "npm:@dprint/typescript@0.96.1",
-    "npm:@dprint/json@0.25.2",
-    "npm:@dprint/markdown@0.26.0",
+    "npm:@dprint/typescript@0.99.2",
+    "npm:@dprint/json@0.26.0",
+    "npm:@dprint/markdown@0.29.0",
     "npm:dprint-plugin-yaml@0.6.0",
   ],
 }

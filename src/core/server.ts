@@ -37,6 +37,7 @@ export async function startServer(configFile?: string) {
 
   if (logFile) {
     await mkdir(dirname(logFile), {recursive: true})
+    console.log(`[MCP] log file: ${logFile}`)
   }
 
   configureLogger({
@@ -87,7 +88,7 @@ export async function startServer(configFile?: string) {
       console.log(`${scheme}://${addr.hostname}:${addr.port}/mcp/${key}`)
     }
 
-    console.log(`Project root %c${getProjectRoot()}`, 'color: green')
+    console.log(`[MCP] Project root %c${getProjectRoot()}`, 'color: green')
   }
 
   const shutdown = () => {
